@@ -1,0 +1,18 @@
+# SPA + PHP em /api (mesmo espírito do Nortrek)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # Cobre tanto DocumentRoot = www (ex.: /consorcio/api/) quanto = pasta do app (ex.: /api/)
+    RewriteCond %{REQUEST_URI} !/api/
+    RewriteRule . index.html [L]
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddType application/javascript .js
+    AddType application/javascript .mjs
+    AddType text/css .css
+</IfModule>
