@@ -17,6 +17,8 @@ import { NewSaleDialog } from "../components/new-sale-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../lib/api";
 import { toast } from "sonner";
+import { FeedbackState } from "../components/feedback-state";
+import { formatDate } from "../lib/format";
 
 const interactionIcons = {
   call: Phone,
@@ -76,6 +78,8 @@ export function LeadDetail() {
 
   async function completeNextAction() {
     if (!id) return;
+    const confirmed = window.confirm("Deseja marcar a próxima ação como concluída?");
+    if (!confirmed) return;
     try {
       await apiPost("/lead_interaction.php", {
         leadId: id,
@@ -91,17 +95,20 @@ export function LeadDetail() {
   }
 
   if (loading) {
-    return <p className="text-muted-foreground">Carregando…</p>;
+    return <FeedbackState type="loading" title="Carregando lead" />;
   }
 
   if (missing) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">Lead não encontrado</p>
-        <Link to="/leads">
-          <Button className="mt-4 rounded-2xl">Voltar para Leads</Button>
-        </Link>
-      </div>
+      <FeedbackState
+        type="empty"
+        title="Lead não encontrado"
+        description="Ele pode ter sido removido ou não estar mais disponível."
+        actionLabel="Voltar para Leads"
+        onAction={() => {
+          window.location.assign("/leads");
+        }}
+      />
     );
   }
 
@@ -132,7 +139,7 @@ export function LeadDetail() {
         </Link>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-2xl">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-muted text-2xl font-bold text-foreground">
               {lead.name
                 .split(" ")
                 .map((n) => n[0])
@@ -149,10 +156,7 @@ export function LeadDetail() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button
-              className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/30 rounded-2xl"
-              onClick={() => setSaleDialogOpen(true)}
-            >
+            <Button className="rounded-xl" onClick={() => setSaleDialogOpen(true)}>
               <CheckCircle className="w-4 h-4 mr-2" />
               Converter em Venda
             </Button>
@@ -174,8 +178,8 @@ export function LeadDetail() {
         </Card>
         <Card className="p-6 rounded-3xl border-0 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center">
-              <Mail className="w-6 h-6 text-purple-600" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted">
+              <Mail className="h-6 w-6 text-slate-600" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Email</p>
@@ -190,7 +194,7 @@ export function LeadDetail() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Cliente desde</p>
-              <p className="font-medium">{new Date(lead.createdAt).toLocaleDateString("pt-BR")}</p>
+              <p className="font-medium">{formatDate(lead.createdAt)}</p>
             </div>
           </div>
         </Card>
@@ -198,11 +202,11 @@ export function LeadDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="p-6 rounded-3xl border-0 shadow-sm bg-gradient-to-br from-purple-50 to-blue-50">
+          <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-white" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted">
+                  <TrendingUp className="h-6 w-6 text-slate-700" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Nível de Interesse</h3>
@@ -210,7 +214,7 @@ export function LeadDetail() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-4xl font-bold text-purple-600">{lead.interest}%</p>
+                <p className="text-4xl font-semibold tabular-nums text-foreground">{lead.interest}%</p>
               </div>
             </div>
             <Progress value={lead.interest} className="h-4 rounded-full" />
@@ -230,8 +234,8 @@ export function LeadDetail() {
                 return (
                   <div key={interaction.id} className="flex gap-4">
                     <div className="flex flex-col items-center">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center flex-shrink-0">
-                        <Icon className="w-5 h-5 text-white" />
+                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-muted">
+                        <Icon className="h-5 w-5 text-slate-700" />
                       </div>
                       {!isLast && <div className="w-0.5 h-full bg-gray-200 mt-2" />}
                     </div>
@@ -239,7 +243,7 @@ export function LeadDetail() {
                       <div className="flex items-center gap-3 mb-2">
                         <p className="font-medium">{typeLabel[interaction.type]}</p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(interaction.date).toLocaleDateString("pt-BR")}
+                          {formatDate(interaction.date)}
                         </p>
                       </div>
                       <p className="text-muted-foreground">{interaction.notes}</p>
@@ -252,66 +256,68 @@ export function LeadDetail() {
         </div>
 
         <div className="space-y-6">
-          <Card className="p-6 rounded-3xl border-0 shadow-sm">
-            <h3 className="text-lg font-semibold mb-4">Ações Rápidas</h3>
+          <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+            <h3 className="mb-4 text-lg font-semibold">Ações rápidas</h3>
             <div className="space-y-3">
               <Button
                 type="button"
-                className="w-full rounded-2xl h-12 bg-blue-600 hover:bg-blue-700"
+                variant="outline"
+                className="h-12 w-full rounded-xl border-border"
                 onClick={() => void addInteraction("call", "Ligação registrada")}
               >
-                <Phone className="w-4 h-4 mr-2" />
-                Registrar Ligação
+                <Phone className="mr-2 h-4 w-4" />
+                Registrar ligação
               </Button>
               <Button
                 type="button"
-                className="w-full rounded-2xl h-12 bg-green-600 hover:bg-green-700"
+                variant="outline"
+                className="h-12 w-full rounded-xl border-border"
                 onClick={() => void addInteraction("whatsapp", "Contato via WhatsApp")}
               >
-                <MessageSquare className="w-4 h-4 mr-2" />
+                <MessageSquare className="mr-2 h-4 w-4" />
                 Enviar WhatsApp
               </Button>
               <Button
                 type="button"
-                className="w-full rounded-2xl h-12 bg-purple-600 hover:bg-purple-700"
+                variant="outline"
+                className="h-12 w-full rounded-xl border-border"
                 onClick={() => void addInteraction("email", "E-mail enviado")}
               >
-                <Mail className="w-4 h-4 mr-2" />
-                Enviar Email
+                <Mail className="mr-2 h-4 w-4" />
+                Enviar e-mail
               </Button>
               <Button
                 type="button"
-                className="w-full rounded-2xl h-12 bg-orange-600 hover:bg-orange-700"
+                variant="outline"
+                className="h-12 w-full rounded-xl border-border"
                 onClick={() => void addInteraction("meeting", "Reunião agendada/realizada")}
               >
-                <Calendar className="w-4 h-4 mr-2" />
-                Agendar Reunião
+                <Calendar className="mr-2 h-4 w-4" />
+                Agendar reunião
               </Button>
             </div>
           </Card>
 
-          <Card className="p-6 rounded-3xl border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-orange-50">
+          <Card className="rounded-2xl border border-amber-100/80 bg-amber-50/40 p-6 shadow-sm">
             <h3 className="text-lg font-semibold mb-2">Próxima Ação</h3>
             <p className="text-muted-foreground mb-4">{lead.nextAction || "—"}</p>
             <Button
               type="button"
-              className="w-full rounded-2xl h-12 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600"
+              className="h-12 w-full rounded-xl"
               onClick={() => void completeNextAction()}
             >
               Marcar como Concluído
             </Button>
           </Card>
 
-          <Card className="p-6 rounded-3xl border-0 shadow-sm">
-            <h3 className="text-lg font-semibold mb-2">Último Contato</h3>
-            <p className="text-2xl font-bold text-purple-600">
+          <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+            <h3 className="mb-2 text-lg font-semibold">Último contato</h3>
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
               {new Date(lead.lastContact).toLocaleDateString("pt-BR")}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
               Há{" "}
-              {Math.floor(
-                (new Date().getTime() - new Date(lead.lastContact).getTime()) / (1000 * 60 * 60 * 24)
-              )}{" "}
+              {Math.floor((new Date().getTime() - new Date(lead.lastContact).getTime()) / (1000 * 60 * 60 * 24))}{" "}
               dias
             </p>
           </Card>

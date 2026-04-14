@@ -6,6 +6,9 @@ import { Progress } from "../components/ui/progress";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import type { Seller } from "../types/domain";
 import { apiGet } from "../lib/api";
+import { FeedbackState } from "../components/feedback-state";
+import { formatCompactCurrency } from "../lib/format";
+import { PageSkeleton } from "../components/page-skeleton";
 
 type Achievement = {
   id: string;
@@ -39,10 +42,16 @@ export function Ranking() {
   }, []);
 
   if (error) {
-    return <p className="text-red-600">{error}</p>;
+    return (
+      <FeedbackState
+        type="error"
+        title="Não foi possível carregar o ranking"
+        description={error}
+      />
+    );
   }
   if (!data?.currentUser || !data.sellers) {
-    return <p className="text-muted-foreground">Carregando…</p>;
+    return <PageSkeleton statCards={3} rows={4} />;
   }
 
   const mockSellers = data.sellers;
@@ -52,88 +61,91 @@ export function Ranking() {
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 via-blue-600 to-green-600 bg-clip-text text-transparent">
-          Ranking de Vendedores
+      <div className="mb-8 text-center">
+        <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground">
+          Ranking de vendedores
         </h1>
-        <p className="text-muted-foreground">Competição saudável, resultados extraordinários</p>
+        <p className="text-muted-foreground">Acompanhe sua posição e evolução</p>
       </div>
 
-      <Card className="p-8 rounded-3xl border-0 shadow-lg bg-gradient-to-br from-purple-500 via-purple-600 to-blue-600 text-white overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24" />
+      <Card className="relative overflow-hidden rounded-2xl border border-border/80 bg-card p-8 shadow-sm">
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <Avatar className="w-20 h-20 border-4 border-white">
-                <AvatarFallback className="bg-white text-purple-600 text-2xl font-bold">
+              <Avatar className="h-20 w-20 border border-border">
+                <AvatarFallback className="bg-muted text-2xl font-semibold text-foreground">
                   {currentUser.avatar}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-2xl font-bold mb-1">{currentUser.name}</h2>
-                <p className="text-white/90">Posição #{currentUser.position} no Ranking</p>
+                <h2 className="mb-1 text-2xl font-semibold">{currentUser.name}</h2>
+                <p className="text-sm text-muted-foreground">Posição #{currentUser.position} no ranking</p>
               </div>
             </div>
-            <div className="text-6xl">{currentUser.badge ?? ""}</div>
+            <div className="text-4xl">{currentUser.badge ?? ""}</div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-3">
             <div>
-              <p className="text-white/80 text-sm mb-1">Total Vendido</p>
-              <p className="text-3xl font-bold">R$ {(currentUser.totalSales / 1000).toFixed(0)}K</p>
+              <p className="mb-1 text-sm text-muted-foreground">Total vendido</p>
+              <p className="text-2xl font-semibold tabular-nums">
+                {formatCompactCurrency(currentUser.totalSales)}
+              </p>
             </div>
             <div>
-              <p className="text-white/80 text-sm mb-1">Comissão</p>
-              <p className="text-3xl font-bold">R$ {(currentUser.commission / 1000).toFixed(1)}K</p>
+              <p className="mb-1 text-sm text-muted-foreground">Comissão</p>
+              <p className="text-2xl font-semibold tabular-nums">
+                {formatCompactCurrency(currentUser.commission)}
+              </p>
             </div>
             <div>
-              <p className="text-white/80 text-sm mb-1">Meta do Mês</p>
-              <p className="text-3xl font-bold">{goalProgress.toFixed(0)}%</p>
+              <p className="mb-1 text-sm text-muted-foreground">Meta do mês</p>
+              <p className="text-2xl font-semibold tabular-nums">{goalProgress.toFixed(0)}%</p>
             </div>
           </div>
           <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-white/90">Progresso para próximo nível</span>
-              <span className="font-medium">{goalProgress.toFixed(0)}%</span>
+            <div className="mb-2 flex justify-between text-sm">
+              <span className="text-muted-foreground">Progresso para o próximo nível</span>
+              <span className="font-medium tabular-nums">{goalProgress.toFixed(0)}%</span>
             </div>
-            <Progress value={goalProgress} className="h-3 rounded-full bg-white/20" />
+            <Progress value={goalProgress} className="h-2.5 rounded-full" />
           </div>
         </div>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {mockSellers.slice(0, 3).map((seller, index) => {
-          const colors = [
-            "from-yellow-400 to-yellow-500",
-            "from-gray-300 to-gray-400",
-            "from-orange-400 to-orange-500",
-          ];
+          const accent =
+            index === 0
+              ? "border-amber-200/80 bg-amber-50/40"
+              : index === 1
+                ? "border-slate-200 bg-slate-50/80"
+                : "border-orange-200/70 bg-orange-50/40";
           const heights = ["md:h-80", "md:h-64", "md:h-56"];
           const order = index === 0 ? "md:order-1" : index === 1 ? "md:order-0" : "md:order-2";
 
           return (
             <Card
               key={seller.id}
-              className={`p-6 rounded-3xl border-0 shadow-lg ${heights[index]} ${order} flex flex-col justify-between bg-gradient-to-br ${colors[index]} text-white`}
+              className={`flex ${heights[index]} ${order} flex-col justify-between rounded-2xl border ${accent} p-6 shadow-sm`}
             >
               <div className="text-center">
-                <div className="text-6xl mb-4">{seller.badge}</div>
-                <Avatar className="w-20 h-20 mx-auto mb-4 border-4 border-white">
-                  <AvatarFallback className="bg-white text-gray-800 text-xl font-bold">
+                <div className="mb-4 text-5xl">{seller.badge}</div>
+                <Avatar className="mx-auto mb-4 h-20 w-20 border border-border">
+                  <AvatarFallback className="bg-muted text-xl font-semibold text-foreground">
                     {seller.avatar}
                   </AvatarFallback>
                 </Avatar>
-                <h3 className="text-xl font-bold mb-1">{seller.name}</h3>
-                <p className="text-white/90 text-sm">Posição #{seller.position}</p>
+                <h3 className="mb-1 text-xl font-semibold">{seller.name}</h3>
+                <p className="text-sm text-muted-foreground">Posição #{seller.position}</p>
               </div>
-              <div className="mt-6 space-y-2 bg-white/20 rounded-2xl p-4">
-                <div className="flex justify-between">
-                  <span className="text-sm">Total</span>
-                  <span className="font-bold">R$ {(seller.totalSales / 1000).toFixed(0)}K</span>
+              <div className="mt-6 space-y-2 rounded-2xl border border-border/60 bg-card p-4">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="font-semibold tabular-nums">{formatCompactCurrency(seller.totalSales)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Comissão</span>
-                  <span className="font-bold">R$ {(seller.commission / 1000).toFixed(1)}K</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Comissão</span>
+                  <span className="font-semibold tabular-nums">{formatCompactCurrency(seller.commission)}</span>
                 </div>
               </div>
             </Card>
@@ -141,33 +153,33 @@ export function Ranking() {
         })}
       </div>
 
-      <Card className="p-6 rounded-3xl border-0 shadow-sm">
-        <h3 className="text-lg font-semibold mb-6">Ranking Completo</h3>
+      <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+        <h3 className="mb-6 text-lg font-semibold">Ranking completo</h3>
         <div className="space-y-3">
           {mockSellers.map((seller) => (
             <div
               key={seller.id}
-              className={`flex items-center gap-4 p-5 rounded-2xl transition-all ${
+              className={`flex items-center gap-4 rounded-xl border p-5 transition-colors ${
                 seller.id === String(currentUser.id)
-                  ? "bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200"
-                  : "bg-gray-50 hover:bg-gray-100"
+                  ? "border-primary/25 bg-muted/50"
+                  : "border-transparent bg-muted/20 hover:bg-muted/40"
               }`}
             >
               <div
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl ${
+                className={`flex h-12 w-12 items-center justify-center rounded-xl text-lg font-semibold ${
                   seller.position === 1
-                    ? "bg-gradient-to-br from-purple-500 to-purple-600 text-white"
+                    ? "border border-amber-300 bg-amber-50 text-amber-950"
                     : seller.position === 2
-                      ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
+                      ? "border border-slate-300 bg-slate-100 text-slate-800"
                       : seller.position === 3
-                        ? "bg-gradient-to-br from-green-500 to-green-600 text-white"
-                        : "bg-gray-200 text-gray-700"
+                        ? "border border-orange-200 bg-orange-50 text-orange-950"
+                        : "border border-border bg-card text-foreground"
                 }`}
               >
                 {seller.position}
               </div>
-              <Avatar className="w-12 h-12">
-                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white font-bold">
+              <Avatar className="h-12 w-12">
+                <AvatarFallback className="bg-muted font-semibold text-foreground">
                   {seller.avatar}
                 </AvatarFallback>
               </Avatar>
@@ -177,18 +189,18 @@ export function Ranking() {
                   {seller.badge && <span className="text-xl">{seller.badge}</span>}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  R$ {(seller.totalSales / 1000).toFixed(0)}K em vendas
+                  {formatCompactCurrency(seller.totalSales)} em vendas
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-green-600">
-                  R$ {(seller.commission / 1000).toFixed(1)}K
+                <p className="text-2xl font-semibold tabular-nums text-foreground">
+                  {formatCompactCurrency(seller.commission)}
                 </p>
                 <p className="text-xs text-muted-foreground">em comissões</p>
               </div>
               <div className="hidden sm:block">
                 {seller.position <= 3 && (
-                  <Badge className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-full px-4 py-2">
+                  <Badge variant="secondary" className="rounded-full px-4 py-2 font-normal">
                     Top {seller.position}
                   </Badge>
                 )}
@@ -198,25 +210,28 @@ export function Ranking() {
         </div>
       </Card>
 
-      <Card className="p-6 rounded-3xl border-0 shadow-sm">
-        <div className="flex items-center gap-2 mb-6">
-          <Award className="w-6 h-6 text-purple-600" />
+      <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+        <div className="mb-6 flex items-center gap-2">
+          <Award className="h-6 w-6 text-slate-600" />
           <h3 className="text-lg font-semibold">Conquistas</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {achievements.map((achievement) => (
             <div
               key={achievement.id}
-              className={`p-6 rounded-2xl transition-all ${
+              className={`rounded-2xl border p-6 transition-all ${
                 achievement.unlocked
-                  ? "bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 shadow-md"
-                  : "bg-gray-50 border-2 border-gray-200 opacity-70"
+                  ? "border-border bg-card shadow-sm"
+                  : "border-border/60 bg-muted/20 opacity-80"
               }`}
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="mb-4 flex items-start justify-between">
                 <div className="text-4xl">{achievement.icon}</div>
                 {achievement.unlocked && (
-                  <Badge className="bg-green-500 text-white rounded-full">
+                  <Badge
+                    variant="secondary"
+                    className="rounded-full border border-emerald-200 bg-emerald-50 font-normal text-emerald-900"
+                  >
                     Desbloqueado
                   </Badge>
                 )}
@@ -237,10 +252,10 @@ export function Ranking() {
         </div>
       </Card>
 
-      <Card className="p-8 rounded-3xl border-0 shadow-sm bg-gradient-to-r from-orange-50 to-red-50 text-center">
-        <Flame className="w-16 h-16 mx-auto mb-4 text-orange-600" />
-        <h3 className="text-2xl font-bold mb-2">Continue firme! 🚀</h3>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+      <Card className="rounded-2xl border border-border/80 bg-muted/30 p-8 text-center shadow-sm">
+        <Flame className="mx-auto mb-4 h-12 w-12 text-amber-600/80" />
+        <h3 className="mb-2 text-xl font-semibold">Continue firme</h3>
+        <p className="mx-auto max-w-2xl text-muted-foreground">
           Cada venda conta. Suba no ranking e desbloqueie novas conquistas.
         </p>
       </Card>
