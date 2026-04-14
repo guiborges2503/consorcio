@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -6,7 +6,7 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Card } from "./ui/card";
-import { DollarSign, Calculator, CheckCircle } from "lucide-react";
+import { DollarSign, Calculator, CheckCircle, User, ClipboardList } from "lucide-react";
 import type { Lead } from "../types/domain";
 import { toast } from "sonner";
 import { apiGet, apiPost } from "../lib/api";
@@ -20,6 +20,7 @@ interface NewSaleDialogProps {
 
 export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDialogProps) {
   const [leadList, setLeadList] = useState<Lead[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     clientName: "",
@@ -117,6 +118,17 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
     });
   };
 
+  const requiredFieldsFilled =
+    !!formData.clientName.trim() && !!formData.cpf.trim() && !!formData.phone.trim() && !!formData.cardValue.trim();
+  const missingRequiredFields = useMemo(() => {
+    const missing: string[] = [];
+    if (!formData.clientName.trim()) missing.push("Nome Completo");
+    if (!formData.cpf.trim()) missing.push("CPF/CNPJ");
+    if (!formData.phone.trim()) missing.push("Telefone");
+    if (!formData.cardValue.trim()) missing.push("Valor da Carta de Crédito");
+    return missing;
+  }, [formData.cardValue, formData.clientName, formData.cpf, formData.phone]);
+
   const formatCurrency = (value: string) => {
     const number = parseFloat(value.replace(/\D/g, "")) || 0;
     return number.toLocaleString("pt-BR");
@@ -158,6 +170,7 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
     }
 
     try {
+      setSaving(true);
       await apiPost("/sales.php", {
         clientName: formData.clientName,
         cpf: formData.cpf,
@@ -175,7 +188,7 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
           : undefined,
         leadId: leadId ? parseInt(leadId, 10) : undefined,
       });
-      toast.success("Venda cadastrada com sucesso! 🎉", {
+      toast.success("Venda cadastrada com sucesso.", {
         description: `Cliente: ${formData.clientName} | Valor: R$ ${formatCurrency(formData.cardValue)}`,
       });
       onOpenChange(false);
@@ -183,6 +196,8 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
       onSaved?.();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar venda");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -204,7 +219,7 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
 
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6 mt-4">
           {!leadId && (
-            <Card className="p-4 rounded-2xl bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+            <Card className="rounded-xl border border-border/80 bg-muted/30 p-4">
               <Label className="text-sm font-medium mb-2 block">
                 Converter Lead em Venda (Opcional)
               </Label>
@@ -224,11 +239,11 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
           )}
 
           <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                👤
-              </div>
-              Dados do Cliente
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted">
+                <User className="h-4 w-4 text-slate-600" />
+              </span>
+              Dados do cliente
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -241,6 +256,7 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
                   }
                   placeholder="Nome do cliente"
                   className="rounded-xl mt-1"
+                  autoFocus
                   required
                 />
               </div>
@@ -254,6 +270,7 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
                   }
                   placeholder="000.000.000-00"
                   className="rounded-xl mt-1"
+                  inputMode="numeric"
                   required
                 />
               </div>
@@ -267,11 +284,12 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
                   }
                   placeholder="(11) 98765-4321"
                   className="rounded-xl mt-1"
+                  inputMode="tel"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">E-mail</Label>
                 <Input
                   id="email"
                   type="email"
@@ -287,11 +305,11 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                📋
-              </div>
-              Dados do Consórcio
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted">
+                <ClipboardList className="h-4 w-4 text-slate-600" />
+              </span>
+              Dados do consórcio
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -400,9 +418,9 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
             </div>
           </div>
 
-          <Card className="p-6 rounded-3xl bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="rounded-2xl border border-emerald-100/90 bg-emerald-50/40 p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-green-600" />
+              <Calculator className="h-5 w-5 text-slate-600" />
               Cálculo de Comissão
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -423,7 +441,7 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
               <div>
                 <Label htmlFor="commissionValue">Sua Comissão</Label>
                 <div className="relative mt-1">
-                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-green-600" />
+                  <DollarSign className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-600" />
                   <Input
                     id="commissionValue"
                     value={
@@ -434,7 +452,7 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
                         : "R$ 0,00"
                     }
                     readOnly
-                    className="rounded-xl pl-10 bg-green-50 border-green-300 font-bold text-green-700 text-lg"
+                    className="rounded-xl border-border bg-muted/50 pl-10 text-lg font-semibold text-foreground"
                   />
                 </div>
               </div>
@@ -454,8 +472,16 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
             />
           </div>
 
-          <Card className="p-6 rounded-3xl bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+          <Card className="rounded-2xl border border-border/80 bg-muted/20 p-6">
             <h3 className="text-lg font-semibold mb-4">Resumo da Venda</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Revise os dados antes de finalizar. Campos com * são obrigatórios.
+            </p>
+            {missingRequiredFields.length > 0 && (
+              <p className="mb-4 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+                Falta preencher: {missingRequiredFields.join(", ")}.
+              </p>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">Cliente</p>
@@ -463,7 +489,7 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Valor da Carta</p>
-                <p className="font-semibold text-purple-600">
+                <p className="font-semibold tabular-nums text-foreground">
                   R$ {formatCurrency(formData.cardValue)}
                 </p>
               </div>
@@ -473,7 +499,7 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Sua Comissão</p>
-                <p className="font-semibold text-green-600">
+                <p className="font-semibold tabular-nums text-emerald-800/90">
                   R${" "}
                   {formData.commissionValue
                     ? parseFloat(formData.commissionValue).toLocaleString("pt-BR", {
@@ -494,12 +520,9 @@ export function NewSaleDialog({ open, onOpenChange, leadId, onSaved }: NewSaleDi
             >
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-lg shadow-green-500/30 rounded-xl px-8"
-            >
+            <Button type="submit" disabled={!requiredFieldsFilled || saving} className="rounded-xl px-8">
               <CheckCircle className="w-4 h-4 mr-2" />
-              Cadastrar Venda
+              {saving ? "Salvando..." : "Cadastrar Venda"}
             </Button>
           </div>
         </form>

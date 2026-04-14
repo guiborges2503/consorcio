@@ -35,9 +35,9 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-blue-50 p-4">
-      <Card className="w-full max-w-md p-8 rounded-3xl border-0 shadow-xl">
-        <h1 className="text-3xl font-bold text-center mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
+      <Card className="w-full max-w-md rounded-2xl border border-border/80 bg-card p-8 shadow-sm">
+        <h1 className="mb-2 text-center text-3xl font-semibold tracking-tight text-foreground">
           ConsórciosPro
         </h1>
         <p className="text-center text-muted-foreground mb-8">Entre com sua conta</p>
@@ -47,9 +47,11 @@ export function Login() {
             <Input
               id="login"
               autoComplete="username"
+              autoFocus
               value={loginField}
               onChange={(e) => setLoginField(e.target.value)}
               className="rounded-xl mt-1 h-12"
+              placeholder="Digite seu usuário ou e-mail"
               required
             />
           </div>
@@ -62,17 +64,20 @@ export function Login() {
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               className="rounded-xl mt-1 h-12"
+              placeholder="Digite sua senha"
               required
             />
           </div>
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{error}</p>
+            <p
+              className="text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2"
+              role="alert"
+              aria-live="assertive"
+            >
+              {error}
+            </p>
           )}
-          <Button
-            type="submit"
-            disabled={submitting}
-            className="w-full h-12 rounded-2xl bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600"
-          >
+          <Button type="submit" disabled={submitting} className="h-12 w-full rounded-xl">
             {submitting ? "Entrando…" : "Entrar"}
           </Button>
         </form>

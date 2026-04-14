@@ -1,6 +1,13 @@
 node_modules
 dist
 .vite
+
+# Metadados de SO / IDEs
+.DS_Store
+Thumbs.db
+
+# Artefatos acidentais (não fazem parte do app)
+Agentes/.next/
 api/settings/database.local.php
 .env
 .env.local

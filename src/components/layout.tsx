@@ -44,28 +44,34 @@ export function Layout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:shadow"
+      >
+        Pular para o conteúdo principal
+      </a>
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-sidebar-border z-50 transform transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 transform border-r border-sidebar-border bg-card transition-transform duration-300 lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-8">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-              ConsórciosPro
-            </h1>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">ConsórciosPro</h1>
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden text-gray-500 hover:text-gray-700"
+              aria-label="Fechar menu"
             >
               <X className="w-6 h-6" />
             </button>
@@ -78,10 +84,11 @@ export function Layout() {
                   key={item.path}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${
                     isActive
-                      ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-lg shadow-purple-500/30"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-slate-900 text-white shadow-sm"
+                      : "text-muted-foreground hover:bg-slate-100 hover:text-foreground"
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
@@ -96,11 +103,12 @@ export function Layout() {
       {/* Main Content */}
       <div className="lg:ml-64">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-sm">
           <div className="px-4 lg:px-8 py-4 flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden text-gray-700 hover:text-gray-900"
+              aria-label="Abrir menu"
             >
               <Menu className="w-6 h-6" />
             </button>
@@ -127,7 +135,7 @@ export function Layout() {
                   <p className="text-xs text-muted-foreground">Vendedor</p>
                 </div>
                 <Avatar className="w-10 h-10">
-                  <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-500 text-white">
+                  <AvatarFallback className="bg-slate-200 text-slate-700">
                     {iniciais(displayName)}
                   </AvatarFallback>
                 </Avatar>
@@ -149,7 +157,7 @@ export function Layout() {
         </header>
 
         {/* Page Content */}
-        <main className="p-4 lg:p-8">
+        <main id="main-content" className="p-4 lg:p-8">
           <Outlet />
         </main>
       </div>

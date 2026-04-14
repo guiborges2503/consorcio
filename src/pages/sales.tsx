@@ -7,6 +7,9 @@ import type { Sale } from "../types/domain";
 import { NewSaleDialog } from "../components/new-sale-dialog";
 import { apiGet, apiPost } from "../lib/api";
 import { toast } from "sonner";
+import { formatCompactCurrency, formatCurrency, formatDate } from "../lib/format";
+import { FeedbackState } from "../components/feedback-state";
+import { PageSkeleton } from "../components/page-skeleton";
 
 export function Sales() {
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "paid">("all");
@@ -51,17 +54,17 @@ export function Sales() {
   const statusConfig = {
     pending: {
       label: "Pendente",
-      color: "bg-yellow-100 text-yellow-700 border-yellow-200",
+      color: "border border-amber-200/80 bg-amber-50 text-amber-900",
       icon: Clock,
     },
     approved: {
       label: "Aprovada",
-      color: "bg-blue-100 text-blue-700 border-blue-200",
+      color: "border border-slate-200 bg-slate-50 text-slate-800",
       icon: CheckCircle,
     },
     paid: {
       label: "Paga",
-      color: "bg-green-100 text-green-700 border-green-200",
+      color: "border border-emerald-200/80 bg-emerald-50 text-emerald-900",
       icon: CheckCircle,
     },
   };
@@ -73,42 +76,39 @@ export function Sales() {
           <h1 className="text-3xl font-bold mb-2">Vendas</h1>
           <p className="text-muted-foreground">Gerencie suas vendas realizadas</p>
         </div>
-        <Button
-          className="bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 shadow-lg shadow-green-500/30 rounded-2xl h-12 px-6"
-          onClick={() => setNewSaleOpen(true)}
-        >
+        <Button className="h-12 rounded-xl px-6" onClick={() => setNewSaleOpen(true)}>
           <Plus className="w-5 h-5 mr-2" />
           Nova Venda
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="p-6 rounded-3xl border-0 shadow-sm bg-gradient-to-br from-purple-50 to-purple-100">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+        <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+          <div className="mb-2 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700">
+              <TrendingUp className="h-6 w-6" strokeWidth={1.75} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Total Vendido</p>
-              <p className="text-2xl font-bold">R$ {(totalSales / 1000).toFixed(0)}K</p>
+              <p className="text-2xl font-bold">{formatCompactCurrency(totalSales)}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-6 rounded-3xl border-0 shadow-sm bg-gradient-to-br from-green-50 to-green-100">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-white" />
+        <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+          <div className="mb-2 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-800">
+              <DollarSign className="h-6 w-6" strokeWidth={1.75} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Comissão Total</p>
-              <p className="text-2xl font-bold">R$ {(totalCommission / 1000).toFixed(1)}K</p>
+              <p className="text-2xl font-bold">{formatCompactCurrency(totalCommission)}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-6 rounded-3xl border-0 shadow-sm bg-gradient-to-br from-yellow-50 to-yellow-100">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center">
-              <Clock className="w-6 h-6 text-white" />
+        <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+          <div className="mb-2 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-amber-100 bg-amber-50 text-amber-900">
+              <Clock className="h-6 w-6" strokeWidth={1.75} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Pendentes</p>
@@ -116,10 +116,10 @@ export function Sales() {
             </div>
           </div>
         </Card>
-        <Card className="p-6 rounded-3xl border-0 shadow-sm bg-gradient-to-br from-blue-50 to-blue-100">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-white" />
+        <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
+          <div className="mb-2 flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700">
+              <CheckCircle className="h-6 w-6" strokeWidth={1.75} />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Pagas</p>
@@ -129,19 +129,19 @@ export function Sales() {
         </Card>
       </div>
 
-      <Card className="p-6 rounded-3xl border-0 shadow-sm">
+      <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
         <div className="flex flex-wrap gap-2">
           <Button
             variant={statusFilter === "all" ? "default" : "outline"}
             onClick={() => setStatusFilter("all")}
-            className="rounded-2xl"
+            className="rounded-lg"
           >
             Todas
           </Button>
           <Button
             variant={statusFilter === "pending" ? "default" : "outline"}
             onClick={() => setStatusFilter("pending")}
-            className="rounded-2xl"
+            className="rounded-lg"
           >
             <Clock className="w-4 h-4 mr-2" />
             Pendentes
@@ -149,7 +149,7 @@ export function Sales() {
           <Button
             variant={statusFilter === "approved" ? "default" : "outline"}
             onClick={() => setStatusFilter("approved")}
-            className="rounded-2xl"
+            className="rounded-lg"
           >
             <CheckCircle className="w-4 h-4 mr-2" />
             Aprovadas
@@ -157,7 +157,7 @@ export function Sales() {
           <Button
             variant={statusFilter === "paid" ? "default" : "outline"}
             onClick={() => setStatusFilter("paid")}
-            className="rounded-2xl"
+            className="rounded-lg"
           >
             <DollarSign className="w-4 h-4 mr-2" />
             Pagas
@@ -165,7 +165,16 @@ export function Sales() {
         </div>
       </Card>
 
-      {loading && <p className="text-muted-foreground">Carregando…</p>}
+      {!loading && (
+        <p className="text-sm text-muted-foreground">
+          {filteredSales.length} venda{filteredSales.length === 1 ? "" : "s"} encontrada
+          {filteredSales.length === 1 ? "" : "s"}.
+        </p>
+      )}
+
+      {loading && (
+        <PageSkeleton statCards={4} rows={4} />
+      )}
 
       <div className="grid grid-cols-1 gap-4">
         {filteredSales.map((sale) => {
@@ -174,32 +183,32 @@ export function Sales() {
           return (
             <Card
               key={sale.id}
-              className="p-6 rounded-3xl border-0 shadow-sm hover:shadow-lg transition-all"
+              className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm transition-shadow hover:shadow-md"
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                      <DollarSign className="w-6 h-6" />
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted text-foreground">
+                      <DollarSign className="h-6 w-6" strokeWidth={1.75} />
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">{sale.clientName}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(sale.date).toLocaleDateString("pt-BR")}
+                        {formatDate(sale.date)}
                       </p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Valor da Carta</p>
-                      <p className="text-xl font-bold text-purple-600">
-                        R$ {sale.cardValue.toLocaleString("pt-BR")}
+                      <p className="text-xl font-semibold tabular-nums text-foreground">
+                        {formatCurrency(sale.cardValue)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground mb-1">Comissão</p>
-                      <p className="text-xl font-bold text-green-600">
-                        R$ {sale.commission.toLocaleString("pt-BR")}
+                      <p className="text-xl font-semibold tabular-nums text-emerald-800/90">
+                        {formatCurrency(sale.commission)}
                       </p>
                     </div>
                     <div>
@@ -210,7 +219,7 @@ export function Sales() {
                 </div>
                 <div className="flex sm:flex-col items-center sm:items-end gap-3">
                   <Badge
-                    className={`rounded-full px-4 py-2 border flex items-center gap-2 ${config.color}`}
+                    className={`flex items-center gap-2 rounded-full px-4 py-2 font-normal ${config.color}`}
                   >
                     <Icon className="w-4 h-4" />
                     {config.label}
@@ -219,17 +228,18 @@ export function Sales() {
                     <Button
                       type="button"
                       size="sm"
-                      className="rounded-xl bg-blue-600 hover:bg-blue-700"
+                      className="rounded-lg"
                       onClick={() => void updateStatus(sale.id, "approve")}
                     >
-                      Acompanhar
+                      Aprovar Venda
                     </Button>
                   )}
                   {sale.status === "approved" && (
                     <Button
                       type="button"
                       size="sm"
-                      className="rounded-xl bg-green-600 hover:bg-green-700"
+                      variant="outline"
+                      className="rounded-lg"
                       onClick={() => void updateStatus(sale.id, "pay")}
                     >
                       Confirmar Recebimento
@@ -243,9 +253,13 @@ export function Sales() {
       </div>
 
       {!loading && filteredSales.length === 0 && (
-        <Card className="p-12 rounded-3xl border-0 shadow-sm text-center">
-          <p className="text-muted-foreground">Nenhuma venda encontrada</p>
-        </Card>
+        <FeedbackState
+          type="empty"
+          title="Nenhuma venda encontrada"
+          description="Tente alterar o filtro ou cadastre uma nova venda."
+          actionLabel="Recarregar"
+          onAction={() => void load()}
+        />
       )}
 
       <NewSaleDialog open={newSaleOpen} onOpenChange={setNewSaleOpen} onSaved={load} />

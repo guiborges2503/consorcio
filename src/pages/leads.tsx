@@ -8,6 +8,9 @@ import { Badge } from "../components/ui/badge";
 import type { Lead } from "../types/domain";
 import { apiGet } from "../lib/api";
 import { NewLeadDialog } from "../components/new-lead-dialog";
+import { FeedbackState } from "../components/feedback-state";
+import { formatDate } from "../lib/format";
+import { PageSkeleton } from "../components/page-skeleton";
 
 export function Leads() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,9 +45,9 @@ export function Leads() {
   }, [load]);
 
   const statusColors = {
-    hot: "bg-red-100 text-red-700 border-red-200",
-    warm: "bg-orange-100 text-orange-700 border-orange-200",
-    cold: "bg-gray-100 text-gray-700 border-gray-200",
+    hot: "border border-red-200/80 bg-red-50 text-red-900",
+    warm: "border border-amber-200/80 bg-amber-50 text-amber-950",
+    cold: "border border-border bg-muted text-muted-foreground",
   };
 
   const statusLabels = {
@@ -60,10 +63,7 @@ export function Leads() {
           <h1 className="text-3xl font-bold mb-2">Leads</h1>
           <p className="text-muted-foreground">Gerencie seus clientes potenciais</p>
         </div>
-        <Button
-          className="bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-700 hover:to-purple-600 shadow-lg shadow-purple-500/30 rounded-2xl h-12 px-6"
-          onClick={() => setNewOpen(true)}
-        >
+        <Button className="h-12 rounded-xl px-6" onClick={() => setNewOpen(true)}>
           <Plus className="w-5 h-5 mr-2" />
           Novo Lead
         </Button>
@@ -71,7 +71,7 @@ export function Leads() {
 
       <NewLeadDialog open={newOpen} onOpenChange={setNewOpen} onCreated={load} />
 
-      <Card className="p-6 rounded-3xl border-0 shadow-sm">
+      <Card className="rounded-2xl border border-border/80 bg-card p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -80,6 +80,7 @@ export function Leads() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-12 h-12 rounded-2xl border-2"
+              aria-label="Buscar leads por nome, telefone ou e-mail"
             />
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -111,38 +112,58 @@ export function Leads() {
             >
               ❄️ Frio
             </Button>
+            {(searchTerm || statusFilter !== "all") && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearchTerm("");
+                  setStatusFilter("all");
+                }}
+                className="rounded-2xl"
+              >
+                Limpar filtros
+              </Button>
+            )}
           </div>
         </div>
       </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="p-4 rounded-2xl border-0 shadow-sm bg-gradient-to-br from-red-50 to-orange-50">
-          <p className="text-sm text-muted-foreground mb-1">Leads Quentes</p>
-          <p className="text-3xl font-bold text-red-600">{counts.hot}</p>
+        <Card className="rounded-2xl border border-red-100 bg-red-50/50 p-4 shadow-sm">
+          <p className="mb-1 text-sm text-muted-foreground">Leads quentes</p>
+          <p className="text-3xl font-semibold tabular-nums text-red-800/90">{counts.hot}</p>
         </Card>
-        <Card className="p-4 rounded-2xl border-0 shadow-sm bg-gradient-to-br from-orange-50 to-yellow-50">
-          <p className="text-sm text-muted-foreground mb-1">Leads Mornos</p>
-          <p className="text-3xl font-bold text-orange-600">{counts.warm}</p>
+        <Card className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4 shadow-sm">
+          <p className="mb-1 text-sm text-muted-foreground">Leads mornos</p>
+          <p className="text-3xl font-semibold tabular-nums text-amber-900/90">{counts.warm}</p>
         </Card>
-        <Card className="p-4 rounded-2xl border-0 shadow-sm bg-gradient-to-br from-gray-50 to-slate-50">
-          <p className="text-sm text-muted-foreground mb-1">Leads Frios</p>
-          <p className="text-3xl font-bold text-gray-600">{counts.cold}</p>
+        <Card className="rounded-2xl border border-border/80 bg-muted/30 p-4 shadow-sm">
+          <p className="mb-1 text-sm text-muted-foreground">Leads frios</p>
+          <p className="text-3xl font-semibold tabular-nums text-slate-700">{counts.cold}</p>
         </Card>
       </div>
 
       {error && (
-        <p className="text-red-600 text-sm">{error}</p>
+        <FeedbackState
+          type="error"
+          title="Não foi possível carregar os leads"
+          description={error}
+          actionLabel="Tentar novamente"
+          onAction={() => void load()}
+        />
       )}
-      {loading && <p className="text-muted-foreground">Carregando…</p>}
+      {loading && (
+        <PageSkeleton statCards={3} rows={5} />
+      )}
 
       <div className="grid grid-cols-1 gap-4">
         {leads.map((lead) => (
           <Link key={lead.id} to={`/leads/${lead.id}`}>
-            <Card className="p-6 rounded-3xl border-0 shadow-sm hover:shadow-lg transition-all cursor-pointer">
+            <Card className="cursor-pointer rounded-2xl border border-border/80 bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted font-bold text-lg text-foreground">
                       {lead.name
                         .split(" ")
                         .map((n) => n[0])
@@ -164,14 +185,14 @@ export function Leads() {
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="w-4 h-4" />
-                      Último contato: {new Date(lead.lastContact).toLocaleDateString("pt-BR")}
+                      Último contato: {formatDate(lead.lastContact)}
                     </div>
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">{lead.notes}</p>
                 </div>
                 <div className="flex flex-row sm:flex-col items-start sm:items-end gap-3">
                   <Badge
-                    className={`rounded-full px-4 py-1 border ${statusColors[lead.status]}`}
+                    className={`rounded-full px-4 py-1 font-normal ${statusColors[lead.status]}`}
                   >
                     {statusLabels[lead.status]}
                   </Badge>
@@ -182,13 +203,15 @@ export function Leads() {
                   <div className="flex items-center gap-2">
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">Interesse</p>
-                      <p className="text-lg font-bold text-purple-600">{lead.interest}%</p>
+                      <p className="text-lg font-semibold tabular-nums text-foreground">
+                        {lead.interest}%
+                      </p>
                     </div>
-                    <div className="w-12 h-12 rounded-full border-4 border-purple-200 flex items-center justify-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border-4 border-slate-200">
                       <div
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500"
+                        className="h-10 w-10 rounded-full"
                         style={{
-                          background: `conic-gradient(#7c3aed ${lead.interest * 3.6}deg, #e5e7eb ${lead.interest * 3.6}deg)`,
+                          background: `conic-gradient(#64748b ${lead.interest * 3.6}deg, #e2e8f0 ${lead.interest * 3.6}deg)`,
                         }}
                       />
                     </div>
@@ -201,9 +224,13 @@ export function Leads() {
       </div>
 
       {!loading && leads.length === 0 && (
-        <Card className="p-12 rounded-3xl border-0 shadow-sm text-center">
-          <p className="text-muted-foreground">Nenhum lead encontrado</p>
-        </Card>
+        <FeedbackState
+          type="empty"
+          title="Nenhum lead encontrado"
+          description="Tente ajustar os filtros ou cadastre um novo lead."
+          actionLabel="Recarregar"
+          onAction={() => void load()}
+        />
       )}
     </div>
   );
