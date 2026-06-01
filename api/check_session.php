@@ -13,11 +13,12 @@ if (!empty($_SESSION[SESSION_KEY])) {
     $pdo = consorcio_pdo();
     if ($pdo && !empty($u['id'])) {
         try {
-            $st = $pdo->prepare('SELECT month_goal FROM consorcio_usuarios WHERE id = ? LIMIT 1');
+            $st = $pdo->prepare('SELECT month_goal, role FROM consorcio_usuarios WHERE id = ? LIMIT 1');
             $st->execute([(int) $u['id']]);
             $row = $st->fetch(PDO::FETCH_ASSOC);
             if ($row) {
                 $u['month_goal'] = (float) $row['month_goal'];
+                $u['role'] = strtoupper((string) ($row['role'] ?? ($u['role'] ?? 'VENDEDOR')));
             }
         } catch (Throwable $e) {
             if (defined('DEBUG_MODE') && DEBUG_MODE) {

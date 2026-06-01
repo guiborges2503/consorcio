@@ -43,7 +43,7 @@ if (!$pdo) {
 }
 
 try {
-    $sql = 'SELECT id, login, senha, nome, email, status FROM consorcio_usuarios WHERE login = :l OR email = :e LIMIT 1';
+    $sql = 'SELECT id, login, senha, nome, email, status, role FROM consorcio_usuarios WHERE login = :l OR email = :e LIMIT 1';
     $st = $pdo->prepare($sql);
     $st->execute([':l' => $login, ':e' => $login]);
     $usuario = $st->fetch();
@@ -67,6 +67,7 @@ try {
         'login' => $usuario['login'],
         'nome' => $usuario['nome'],
         'email' => $usuario['email'],
+        'role' => strtoupper((string) ($usuario['role'] ?? 'VENDEDOR')),
     ];
 
     echo json_encode([
@@ -77,6 +78,7 @@ try {
             'login' => $usuario['login'],
             'nome' => $usuario['nome'],
             'email' => $usuario['email'],
+            'role' => strtoupper((string) ($usuario['role'] ?? 'VENDEDOR')),
         ],
     ]);
 } catch (Throwable $e) {

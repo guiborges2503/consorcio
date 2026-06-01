@@ -52,6 +52,34 @@ function consorcio_require_login(): array
     return $u;
 }
 
+function consorcio_user_role(array $user): string
+{
+    return strtoupper((string) ($user['role'] ?? 'VENDEDOR'));
+}
+
+function consorcio_is_admin(array $user): bool
+{
+    return consorcio_user_role($user) === 'ADMIN';
+}
+
+function consorcio_require_admin(): array
+{
+    $user = consorcio_require_login();
+    if (!consorcio_is_admin($user)) {
+        consorcio_json_exit(['success' => false, 'message' => 'Acesso restrito ao administrador', 'code' => 'FORBIDDEN'], 403);
+    }
+    return $user;
+}
+
+/** Escopo de usuario_id: admin pode filtrar; vendedor só vê o próprio. */
+function consorcio_scoped_user_id(array $user, ?int $requestedId = null): int
+{
+    if (consorcio_is_admin($user) && $requestedId !== null && $requestedId > 0) {
+        return $requestedId;
+    }
+    return (int) $user['id'];
+}
+
 function consorcio_iniciais(string $nome): string
 {
     $nome = trim($nome);

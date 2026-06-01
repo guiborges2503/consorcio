@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/auth-context";
+import { apiGet } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -16,7 +17,7 @@ export function Login() {
 
   useEffect(() => {
     if (user) {
-      navigate("/", { replace: true });
+      navigate(user.role === "ADMIN" ? "/admin" : "/", { replace: true });
     }
   }, [user, navigate]);
 
@@ -26,7 +27,9 @@ export function Login() {
     setSubmitting(true);
     try {
       await login(loginField.trim(), senha);
-      navigate("/", { replace: true });
+      const session = await apiGet<{ user?: { role?: string } }>("/check_session.php");
+      const role = session.user?.role;
+      navigate(role === "ADMIN" ? "/admin" : "/", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha no login");
     } finally {
@@ -38,7 +41,7 @@ export function Login() {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="w-full max-w-md rounded-2xl border border-border/80 bg-card p-8 shadow-sm">
         <h1 className="mb-2 text-center text-3xl font-semibold tracking-tight text-foreground">
-          ConsórciosPro
+          Contempla
         </h1>
         <p className="text-center text-muted-foreground mb-8">Entre com sua conta</p>
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -81,9 +84,6 @@ export function Login() {
             {submitting ? "Entrando…" : "Entrar"}
           </Button>
         </form>
-        <p className="text-xs text-center text-muted-foreground mt-6">
-          Demo: admin / admin123 ou amanda / admin123
-        </p>
       </Card>
     </div>
   );

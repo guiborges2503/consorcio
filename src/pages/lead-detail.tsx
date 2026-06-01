@@ -13,7 +13,6 @@ import { Card } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Progress } from "../components/ui/progress";
 import type { Lead, Interaction } from "../types/domain";
-import { NewSaleDialog } from "../components/new-sale-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { apiGet, apiPost } from "../lib/api";
 import { toast } from "sonner";
@@ -38,7 +37,6 @@ export function LeadDetail() {
   const { id } = useParams();
   const [lead, setLead] = useState<Lead | null>(null);
   const [missing, setMissing] = useState(false);
-  const [saleDialogOpen, setSaleDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -156,10 +154,12 @@ export function LeadDetail() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button className="rounded-xl" onClick={() => setSaleDialogOpen(true)}>
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Converter em Venda
-            </Button>
+            <Link to={`/contratos/novo?lead_id=${id}`}>
+              <Button className="rounded-xl">
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Converter em Contrato
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -323,12 +323,6 @@ export function LeadDetail() {
           </Card>
         </div>
       </div>
-      <NewSaleDialog
-        open={saleDialogOpen}
-        onOpenChange={setSaleDialogOpen}
-        leadId={id}
-        onSaved={load}
-      />
     </div>
   );
 }

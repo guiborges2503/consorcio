@@ -4,16 +4,8 @@ if (ob_get_level() === 0) {
 }
 require_once __DIR__ . '/app_config.php';
 require_once __DIR__ . '/../lib/db_dialect.php';
-require_once __DIR__ . '/../lib/sqlite_install.php';
 
 date_default_timezone_set('America/Sao_Paulo');
-
-function consorcio_sqlite_dsn(): string
-{
-    $path = str_replace('\\', '/', (string) SQLITE_PATH);
-
-    return 'sqlite:' . $path;
-}
 
 function consorcio_pdo(): ?PDO
 {
@@ -22,29 +14,17 @@ function consorcio_pdo(): ?PDO
         return $pdo;
     }
     try {
-        if (consorcio_is_sqlite()) {
-            if (!file_exists(SQLITE_PATH)) {
-                consorcio_sqlite_install();
-            }
-            $pdo = new PDO(consorcio_sqlite_dsn(), null, null, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => true,
-            ]);
-            $pdo->exec('PRAGMA foreign_keys = ON');
-        } else {
-            $dsn = sprintf(
-                'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
-                DB_HOST,
-                DB_PORT,
-                DB_NAME
-            );
-            $pdo = new PDO($dsn, DB_USER, DB_PASS, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => true,
-            ]);
-        }
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
+            DB_HOST,
+            DB_PORT,
+            DB_NAME
+        );
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => true,
+        ]);
     } catch (Throwable $e) {
         if (defined('DEBUG_MODE') && DEBUG_MODE) {
             error_log('[consorcio] PDO: ' . $e->getMessage());
@@ -60,7 +40,10 @@ function consorcio_sessao_iniciar(): void
         return;
     }
     ini_set('session.use_strict_mode', '1');
-    $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+    $secure =
+        (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (isset($_SERVER['HTTP_X_FORWARDED_PROTO'])
+            && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
     if (PHP_VERSION_ID >= 70300) {
         session_set_cookie_params([
             'lifetime' => SESSION_LIFETIME,
