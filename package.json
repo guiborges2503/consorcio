@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "build:deploy": "vite build && node scripts/prepare-deploy.mjs",
     "dev": "vite",
-    "dev:api": "php -S 127.0.0.1:8090 -t api",
+    "dev:api": "php -S localhost:8000",
     "dev:full": "concurrently -k -n php,vite -c cyan,magenta \"npm run dev:api\" \"vite --mode php-api\""
   },
   "dependencies": {

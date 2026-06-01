@@ -12,4 +12,3 @@ api/settings/database.local.php
 .env
 .env.local
 *.log
-database/consorcio.sqlite

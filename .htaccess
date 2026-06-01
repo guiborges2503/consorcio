@@ -1,14 +1,21 @@
-# SPA + PHP em /api (mesmo espírito do Nortrek)
+# SPA React + API PHP (Hostinger / LiteSpeed / Apache)
+Options -MultiViews
+DirectoryIndex index.html
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
+    RewriteBase /
 
+    # API PHP — nunca mandar para o SPA
+    RewriteRule ^api(/.*)?$ - [L,NC]
+
+    # Arquivos e pastas que existem de verdade (assets, .js, .css, etc.)
     RewriteCond %{REQUEST_FILENAME} -f [OR]
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Cobre tanto DocumentRoot = www (ex.: /consorcio/api/) quanto = pasta do app (ex.: /api/)
-    RewriteCond %{REQUEST_URI} !/api/
-    RewriteRule . index.html [L]
+    # React Router: /parcelas, /contratos, /leads/1, voltar do navegador, F5…
+    RewriteRule ^ index.html [L,QSA]
 </IfModule>
 
 <IfModule mod_mime.c>

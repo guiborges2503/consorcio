@@ -1,17 +1,21 @@
 <?php
 /**
- * Renomeie ou copie para database.local.php.
+ * Copie para database.local.php (não versionar).
  *
- * Padrão (sem este arquivo): SQLite em database/consorcio.sqlite (criado na 1ª requisição).
- * Para MySQL, descomente e ajuste:
+ * Desenvolvimento local (MySQL):
+ */
+define('DB_HOST', '127.0.0.1');
+define('DB_PORT', '3306');
+define('DB_NAME', 'consorcio');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+
+/**
+ * Produção Hostinger (contempla.conectaxcon.com.br):
  *
- * define('CONSORCIO_DB_DRIVER', 'mysql');
- * define('DB_HOST', '127.0.0.1');
+ * define('DB_HOST', 'srv746.hstgr.io');
  * define('DB_PORT', '3306');
- * define('DB_NAME', 'consorcio');
- * define('DB_USER', 'root');
- * define('DB_PASS', '');
- *
- * Opcional SQLite:
- * define('SQLITE_PATH', 'C:/caminho/consorcio.sqlite');
+ * define('DB_NAME', 'u276379167_CONSORCIO');
+ * define('DB_USER', 'u276379167_CONSORCIO');
+ * define('DB_PASS', 'sua_senha');
  */

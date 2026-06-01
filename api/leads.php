@@ -17,8 +17,17 @@ $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 if ($method === 'GET') {
     $q = trim((string) ($_GET['q'] ?? ''));
     $status = trim((string) ($_GET['status'] ?? 'all'));
-    $sql = 'SELECT * FROM consorcio_leads WHERE usuario_id = ?';
-    $params = [$uid];
+    if (consorcio_is_admin($user)) {
+        $sql = 'SELECT * FROM consorcio_leads WHERE 1=1';
+        $params = [];
+        if (isset($_GET['usuario_id']) && (int) $_GET['usuario_id'] > 0) {
+            $sql .= ' AND usuario_id = ?';
+            $params[] = (int) $_GET['usuario_id'];
+        }
+    } else {
+        $sql = 'SELECT * FROM consorcio_leads WHERE usuario_id = ?';
+        $params = [$uid];
+    }
     if ($status !== '' && $status !== 'all') {
         $sql .= ' AND status = ?';
         $params[] = $status;

@@ -1,0 +1,4 @@
+# Garante que requisições em /api/ executem PHP (não caiam no fallback do SPA)
+<IfModule mod_rewrite.c>
+    RewriteEngine Off
+</IfModule>

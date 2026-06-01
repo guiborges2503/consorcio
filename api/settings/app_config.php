@@ -29,9 +29,11 @@ if ($consorcioEnv === 'development') {
     define('CORS_FALLBACK_ORIGIN', 'http://localhost:5173');
 } else {
     define('DEBUG_MODE', false);
-    define('CORS_ALLOWED_ORIGINS', []);
-    /** Em produção, defina aqui a URL exata do front (ex.: https://app.exemplo.com). */
-    define('CORS_FALLBACK_ORIGIN', '');
+    /** Front em produção (mesmo host da API = mesmo origin; CORS só se abrir de outro domínio). */
+    define('CORS_ALLOWED_ORIGINS', [
+        'https://contempla.conectaxcon.com.br',
+    ]);
+    define('CORS_FALLBACK_ORIGIN', 'https://contempla.conectaxcon.com.br');
 }
 
 define('APP_NAME', 'consorcio');
