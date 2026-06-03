@@ -6,7 +6,7 @@ require_once __DIR__ . '/lib/transform.php';
 require_once __DIR__ . '/lib/installments.php';
 
 consorcio_api_begin();
-$user = consorcio_require_login();
+$user = consorcio_require_consorcio_access();
 $pdo = consorcio_pdo();
 if (!$pdo) {
     consorcio_json_exit(['success' => false, 'message' => 'Banco indisponível'], 503);

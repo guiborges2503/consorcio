@@ -23,6 +23,7 @@ import { apiGet, apiPatch, apiPost } from "../lib/api";
 import { toast } from "sonner";
 import { PageSkeleton } from "../components/page-skeleton";
 import { formatCompactCurrency } from "../lib/format";
+import { roleLabel } from "../lib/auth-roles";
 import type { ManagedUser, UserRole } from "../types/domain";
 
 const emptyForm = {
@@ -31,7 +32,6 @@ const emptyForm = {
   email: "",
   senha: "",
   role: "VENDEDOR" as UserRole,
-  status: "ATIVO" as "ATIVO" | "INATIVO",
   monthGoal: "500000",
 };
 
@@ -73,7 +73,6 @@ export function UsersAdmin() {
       email: u.email,
       senha: "",
       role: u.role,
-      status: u.status,
       monthGoal: String(u.monthGoal),
     });
     setDialogOpen(true);
@@ -89,7 +88,6 @@ export function UsersAdmin() {
           nome: form.nome,
           email: form.email,
           role: form.role,
-          status: form.status,
           monthGoal: parseFloat(form.monthGoal) || 500000,
         };
         if (form.senha) body.senha = form.senha;
@@ -106,7 +104,6 @@ export function UsersAdmin() {
           email: form.email,
           senha: form.senha,
           role: form.role,
-          status: form.status,
           monthGoal: parseFloat(form.monthGoal) || 500000,
         });
         toast.success("Usuário criado");
@@ -130,7 +127,10 @@ export function UsersAdmin() {
             <UserCog className="h-8 w-8" />
             Usuários
           </h1>
-          <p className="text-muted-foreground">Crie e gerencie vendedores e administradores</p>
+          <p className="text-muted-foreground">
+            Crie e gerencie vendedores. Ativar ou desativar acessos é feito pelo suporte da
+            plataforma.
+          </p>
         </div>
         <Button className="rounded-xl h-12" onClick={openCreate}>
           <Plus className="w-5 h-5 mr-2" />
@@ -145,7 +145,7 @@ export function UsersAdmin() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <p className="font-semibold text-lg">{u.nome}</p>
-                  <Badge variant="outline">{u.role === "ADMIN" ? "Admin" : "Vendedor"}</Badge>
+                  <Badge variant="outline">{roleLabel(u.role)}</Badge>
                   <Badge
                     className={
                       u.status === "ATIVO"
@@ -163,7 +163,7 @@ export function UsersAdmin() {
                   Meta mensal: {formatCompactCurrency(u.monthGoal)}
                 </p>
               </div>
-              <Button variant="outline" className="rounded-xl" onClick={() => openEdit(u)}>
+              <Button variant="outline" className="rounded-xl shrink-0" onClick={() => openEdit(u)}>
                 <Pencil className="w-4 h-4 mr-2" />
                 Editar
               </Button>
@@ -223,39 +223,20 @@ export function UsersAdmin() {
                 required={!editing}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Perfil</Label>
-                <Select
-                  value={form.role}
-                  onValueChange={(v) => setForm((f) => ({ ...f, role: v as UserRole }))}
-                >
-                  <SelectTrigger className="rounded-xl mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="VENDEDOR">Vendedor</SelectItem>
-                    <SelectItem value="ADMIN">Administrador</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select
-                  value={form.status}
-                  onValueChange={(v) =>
-                    setForm((f) => ({ ...f, status: v as "ATIVO" | "INATIVO" }))
-                  }
-                >
-                  <SelectTrigger className="rounded-xl mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ATIVO">Ativo</SelectItem>
-                    <SelectItem value="INATIVO">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label>Perfil</Label>
+              <Select
+                value={form.role}
+                onValueChange={(v) => setForm((f) => ({ ...f, role: v as UserRole }))}
+              >
+                <SelectTrigger className="rounded-xl mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="VENDEDOR">Vendedor</SelectItem>
+                  <SelectItem value="ADMIN">Administrador</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Meta mensal (R$)</Label>

@@ -26,7 +26,9 @@ export function NewContract() {
 
       <NewSaleForm
         leadId={leadId}
-        onSuccess={() => navigate("/contratos", { replace: true })}
+        onSuccess={(sale) =>
+          navigate(`/contratos/${sale.id}/dossie?novo=1`, { replace: true })
+        }
         onCancel={() => navigate(-1)}
       />
     </div>

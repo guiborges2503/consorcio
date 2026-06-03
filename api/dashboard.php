@@ -6,7 +6,7 @@ require_once __DIR__ . '/lib/transform.php';
 require_once __DIR__ . '/lib/installments.php';
 
 consorcio_api_begin();
-$user = consorcio_require_login();
+$user = consorcio_require_consorcio_access();
 if (consorcio_is_admin($user)) {
     consorcio_json_exit(['success' => false, 'message' => 'Use admin_dashboard.php', 'code' => 'ADMIN_REDIRECT'], 400);
 }

@@ -1,0 +1,39 @@
+---
+description: Sempre considerar mobile — layout, touch e performance
+alwaysApply: true
+---
+
+# Mobile-first (Contempla)
+
+Toda tela ou componente novo deve funcionar bem em **320px+** antes de desktop.
+
+## Layout
+
+- Mobile-first no Tailwind: base = mobile, depois `sm:` / `md:` / `lg:`.
+- Altura de tela: preferir `min-h-[100dvh]` (não só `min-h-screen`).
+- Safe area iOS: `viewport-fit=cover` + padding com `env(safe-area-inset-*)`.
+- Evitar scroll horizontal; usar `truncate`, `min-w-0`, tabelas com scroll interno.
+
+## Touch e formulários
+
+- Alvos de toque mínimo **44×44px** (botões, links, ícones clicáveis).
+- Inputs com **`text-base` (16px)** no mobile — evita zoom automático no iOS.
+- Não usar `autoFocus` no mobile (teclado abre antes do usuário querer).
+
+## Navegação
+
+- Sidebar vira drawer no mobile (`lg:hidden` / hamburger).
+- Títulos longos no header: `truncate` + `min-w-0`.
+- Cards e padding: `p-4` mobile → `p-6`/`p-8` desktop.
+
+## Conteúdo
+
+- Split desktop (painel + form) → versão mobile compacta (hero curto, chips, card).
+- Textos de botão mais curtos no mobile se necessário ("Entrar" vs frase longa).
+- Tabelas densas: cards empilhados no mobile ou `overflow-x-auto`.
+
+## Checklist antes de entregar
+
+1. Testar em ~375px de largura.
+2. Formulário usável com teclado aberto.
+3. Nenhum elemento cortado ou fora da tela.

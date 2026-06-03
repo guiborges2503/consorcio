@@ -33,8 +33,28 @@ export interface Sale {
   installmentValue?: number | null;
   /** Soma das parcelas com status paga (não é a entrada à vista do contrato). */
   paidInstallments?: number;
+  lanceOfertado?: boolean;
+  diaAssembleia?: number | null;
+  dataAssembleia?: string | null;
   cpf?: string;
   phone?: string;
+  email?: string;
+  notes?: string;
+  adminFee?: number;
+  commissionPercent?: number;
+  sellerName?: string;
+  parcelas?: Parcela[];
+  parcelasResumo?: ParcelasResumo;
+}
+
+export interface ParcelasResumo {
+  total: number;
+  pagas: number;
+  pendentes: number;
+  atrasadas: number;
+  valorPago: number;
+  valorPendente: number;
+  valorAtrasado: number;
 }
 
 export interface Parcela {
@@ -64,7 +84,7 @@ export interface Seller {
   totalEntrada?: number;
 }
 
-export type UserRole = "ADMIN" | "VENDEDOR";
+export type UserRole = "MASTER" | "ADMIN" | "VENDEDOR";
 
 export interface AuthUser {
   id: number;
@@ -72,6 +92,7 @@ export interface AuthUser {
   nome: string;
   email: string;
   role?: UserRole;
+  empresa_id?: number | null;
   month_goal?: number;
 }
 
@@ -83,6 +104,105 @@ export interface ManagedUser {
   role: UserRole;
   status: "ATIVO" | "INATIVO";
   monthGoal: number;
+  empresaId?: number | null;
+  cobrarFatura?: boolean;
+}
+
+export type AuditNivel = "INFO" | "WARN" | "ERROR" | "SECURITY";
+
+export interface AuditLogEntry {
+  id: number;
+  empresaId: number | null;
+  usuarioId: number | null;
+  usuarioNome: string | null;
+  usuarioLogin: string | null;
+  nivel: AuditNivel;
+  acao: string;
+  recurso: string;
+  recursoId: string;
+  mensagem: string;
+  ip: string;
+  createdAt: string;
+  payload: Record<string, unknown> | null;
+}
+
+export type FormaCobranca = "MENSAL" | "ANUAL";
+export type EmpresaStatus = "ATIVA" | "INATIVA" | "SUSPENSA";
+export type FaturaStatus = "ABERTA" | "PAGA" | "PARCIAL" | "VENCIDA" | "CANCELADA";
+
+export interface Plano {
+  id: number;
+  codigo: string;
+  nome: string;
+  descricao: string;
+  valorMensal: number;
+  valorAnual: number;
+  maxUsuarios: number | null;
+  ativo: boolean;
+}
+
+export interface Empresa {
+  id: number;
+  nome: string;
+  slug: string;
+  documento: string;
+  email: string;
+  telefone: string;
+  status: EmpresaStatus;
+  planoCodigo: string;
+  planoNome?: string;
+  precoPersonalizado?: boolean;
+  formaCobranca: FormaCobranca;
+  valorMensalUsuario: number;
+  valorAnualUsuario: number;
+  diaVencimento: number;
+  observacoes?: string;
+  qtdUsuarios: number;
+  qtdUsuariosCobraveis?: number;
+  valorEstimadoFatura: number;
+  admin?: ManagedUser | null;
+  usuarios?: ManagedUser[];
+  faturaAberta?: Fatura | null;
+}
+
+export interface FaturaItem {
+  id: number;
+  faturaId: number;
+  usuarioId: number;
+  usuarioNome: string;
+  valor: number;
+  valorPago: number;
+  saldo: number;
+  status: "ABERTA" | "PAGA";
+  pagoEm: string | null;
+}
+
+export interface Fatura {
+  id: number;
+  empresaId: number;
+  empresaNome: string;
+  numero: string;
+  tipoMovimento: "RECEBER" | "PAGAR";
+  tipoPeriodo: "MENSAL" | "ANUAL" | "AVULSA";
+  referencia: string;
+  descricao: string;
+  valor: number;
+  valorPago: number;
+  saldo: number;
+  status: FaturaStatus;
+  vencimento: string;
+  pagoEm: string | null;
+  observacoes?: string;
+  itens?: FaturaItem[];
+  itensPagos?: number;
+  itensTotal?: number;
+}
+
+export interface FinanceiroGeral {
+  aReceber: number;
+  aPagar: number;
+  totalEmAberto: number;
+  totalPago: number;
 }
 
 export interface DashboardStats {

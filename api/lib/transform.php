@@ -80,6 +80,60 @@ function consorcio_paid_installments_by_sale(PDO $pdo, array $saleIds): array
     return $out;
 }
 
+function consorcio_sale_tem_assembleia(PDO $pdo): bool
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+    try {
+        $pdo->query('SELECT lance_ofertado, dia_assembleia, data_assembleia FROM consorcio_sales LIMIT 0');
+        $cache = true;
+    } catch (Throwable $e) {
+        $cache = false;
+    }
+    return $cache;
+}
+
+function consorcio_parse_lance_ofertado(mixed $value): bool
+{
+    if (is_bool($value)) {
+        return $value;
+    }
+    if (is_int($value) || is_float($value)) {
+        return (int) $value === 1;
+    }
+    $s = strtoupper(trim((string) $value));
+
+    return in_array($s, ['1', 'SIM', 'TRUE', 'YES', 'S'], true);
+}
+
+function consorcio_parse_data_assembleia(mixed $value): ?string
+{
+    $s = trim((string) $value);
+    if ($s === '') {
+        return null;
+    }
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $s)) {
+        return null;
+    }
+
+    return $s;
+}
+
+function consorcio_parse_dia_assembleia(mixed $value): ?int
+{
+    if ($value === null || $value === '') {
+        return null;
+    }
+    $dia = (int) $value;
+    if ($dia < 1 || $dia > 28) {
+        return null;
+    }
+
+    return $dia;
+}
+
 function consorcio_sale_to_api(array $r, ?float $paidInstallments = null): array
 {
     $item = [
@@ -96,6 +150,16 @@ function consorcio_sale_to_api(array $r, ?float $paidInstallments = null): array
         'installmentValue' => consorcio_sale_installment_value($r),
         'cpf' => $r['cpf'] ?? '',
         'phone' => $r['phone'] ?? '',
+        'email' => $r['email'] ?? '',
+        'notes' => $r['notes'] ?? '',
+        'adminFee' => (float) ($r['admin_fee'] ?? 20),
+        'commissionPercent' => (float) ($r['commission_percent'] ?? 4),
+        'sellerName' => isset($r['vendedor_nome']) ? (string) $r['vendedor_nome'] : null,
+        'lanceOfertado' => isset($r['lance_ofertado']) ? (int) $r['lance_ofertado'] === 1 : false,
+        'diaAssembleia' => isset($r['dia_assembleia']) && $r['dia_assembleia'] !== null
+            ? (int) $r['dia_assembleia']
+            : null,
+        'dataAssembleia' => !empty($r['data_assembleia']) ? (string) $r['data_assembleia'] : null,
     ];
     if ($paidInstallments !== null) {
         $item['paidInstallments'] = round($paidInstallments, 2);

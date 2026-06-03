@@ -1,6 +1,8 @@
 
 # Contempla — Gestão de Consórcios
 
+**Versão:** 1.0.6
+
 SaaS para gestão de vendas de consórcio.
 
 ## Desenvolvimento local
@@ -23,7 +25,7 @@ No PowerShell, com PHP 7.4 do WAMP no PATH:
 
 ```powershell
 $env:Path = "C:\wamp64\bin\php\php7.4.33;" + $env:Path
-php -S localhost:8000
+npm run dev:api
 ```
 
 A API fica em `http://localhost:8000/api/` (pasta `api/` na raiz do projeto).
@@ -34,13 +36,16 @@ A API fica em `http://localhost:8000/api/` (pasta `api/` na raiz do projeto).
 npm run dev
 ```
 
-O Vite (porta 5173) faz proxy de `/api/*` para `http://localhost:8000/api/*`.
+O Vite (porta **5173**) faz proxy de `/api/*` → `http://localhost:8000/api/*`.  
+No console do Vite deve aparecer: `Proxy /api → http://localhost:8000/api`.
 
-**Alternativa:** um único comando com front + API (requer PHP no PATH):
+**Alternativa:** front + API juntos (requer PHP no PATH):
 
 ```bash
 npm run dev:full
 ```
+
+**WAMP/Apache (sem PHP :8000):** use `npm run dev:wamp` e configure `.env.local` (veja `.env.development.example`).
 
 ### Dados demo (somente desenvolvimento)
 

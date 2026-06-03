@@ -1,0 +1,24 @@
+---
+description: Master vs admin empresa — escopo de acesso
+alwaysApply: true
+---
+
+# Master (plataforma) vs Admin (empresa)
+
+## MASTER — administra o SaaS
+- **Pode:** empresas, faturas SaaS, financeiro da plataforma, logs, admins de tenant
+- **Não pode:** leads, contratos, parcelas, ranking ou qualquer dado operacional de consórcio dos clientes
+- Rotas: `/master/*`
+- Login redireciona para `/master`
+
+## ADMIN — administra a empresa (tenant)
+- Vê dados **só da sua empresa** (vendedores, leads, contratos…)
+- Rotas: `/admin`, `/leads`, `/contratos`, etc.
+
+## VENDEDOR
+- Só os próprios dados
+
+## Backend
+- APIs operacionais: `consorcio_require_consorcio_access()` (bloqueia MASTER)
+- APIs admin empresa: `consorcio_require_admin()` (só ADMIN)
+- APIs master: `consorcio_require_master()` (futuro)
