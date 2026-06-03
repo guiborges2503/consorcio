@@ -23,3 +23,16 @@ DirectoryIndex index.html
     AddType application/javascript .mjs
     AddType text/css .css
 </IfModule>
+
+# HTML sempre fresco (SPA); assets com hash podem cachear longo prazo
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+
+    <FilesMatch "\.(js|css|woff2?)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
