@@ -7,7 +7,7 @@ import { Textarea } from "./ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Card } from "./ui/card";
 import { DollarSign, Calculator, CheckCircle, User, ClipboardList } from "lucide-react";
-import type { Lead } from "../types/domain";
+import type { Lead, Sale } from "../types/domain";
 import { toast } from "sonner";
 import { apiGet, apiPost } from "../lib/api";
 import {
@@ -34,12 +34,15 @@ const initialForm = () => ({
   commissionPercent: "4",
   commissionValue: "",
   saleDate: new Date().toISOString().split("T")[0],
+  diaAssembleia: "10",
+  lanceOfertado: "NAO" as "SIM" | "NAO",
+  dataAssembleia: "",
   notes: "",
 });
 
 interface NewSaleFormProps {
   leadId?: string;
-  onSuccess?: () => void;
+  onSuccess?: (sale: Sale) => void;
   onCancel?: () => void;
 }
 
@@ -209,6 +212,15 @@ export function NewSaleForm({ leadId, onSuccess, onCancel }: NewSaleFormProps) {
       return;
     }
 
+    if (!formData.diaAssembleia) {
+      toast.error("Informe o dia fixo da assembleia");
+      return;
+    }
+    if (formData.lanceOfertado === "SIM" && !formData.dataAssembleia) {
+      toast.error("Informe a data da assembleia em que o lance foi ofertado");
+      return;
+    }
+
     const effectiveLeadId = leadId ?? selectedLeadId;
 
     const parcelaEnvio =
@@ -220,7 +232,7 @@ export function NewSaleForm({ leadId, onSuccess, onCancel }: NewSaleFormProps) {
 
     try {
       setSaving(true);
-      await apiPost("/sales.php", {
+      const res = await apiPost<{ sale?: Sale }>("/sales.php", {
         clientName: formData.clientName,
         cpf: formData.cpf,
         phone: formData.phone,
@@ -234,12 +246,18 @@ export function NewSaleForm({ leadId, onSuccess, onCancel }: NewSaleFormProps) {
         installments: installmentsCount || 80,
         adminFee: parseFloat(formData.adminFee) || 20,
         installmentValue: parcelaEnvio,
+        diaAssembleia: Number(formData.diaAssembleia),
+        lanceOfertado: formData.lanceOfertado === "SIM",
+        dataAssembleia:
+          formData.lanceOfertado === "SIM" ? formData.dataAssembleia : undefined,
         leadId: effectiveLeadId ? parseInt(effectiveLeadId, 10) : undefined,
       });
       toast.success("Contrato cadastrado com sucesso.", {
         description: `Cliente: ${formData.clientName} | Valor: ${formatCurrency(cardNum)}`,
       });
-      onSuccess?.();
+      if (res.sale) {
+        onSuccess?.(res.sale);
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar contrato");
     } finally {
@@ -480,6 +498,74 @@ export function NewSaleForm({ leadId, onSuccess, onCancel }: NewSaleFormProps) {
               className="rounded-xl mt-1"
             />
           </div>
+          <div>
+            <Label htmlFor="diaAssembleia">Dia fixo da assembleia *</Label>
+            <Select
+              value={formData.diaAssembleia}
+              onValueChange={(value) => setFormData((prev) => ({ ...prev, diaAssembleia: value }))}
+            >
+              <SelectTrigger id="diaAssembleia" className="rounded-xl mt-1">
+                <SelectValue placeholder="Dia do mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 28 }, (_, i) => {
+                  const dia = String(i + 1);
+                  return (
+                    <SelectItem key={dia} value={dia}>
+                      Dia {dia} de cada mês
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Dia recorrente do grupo — ex.: assembleia todo dia 15.
+            </p>
+          </div>
+          <div>
+            <Label htmlFor="lanceOfertado">Lance ofertado?</Label>
+            <Select
+              value={formData.lanceOfertado}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  lanceOfertado: value as "SIM" | "NAO",
+                  dataAssembleia: value === "NAO" ? "" : prev.dataAssembleia,
+                }))
+              }
+            >
+              <SelectTrigger id="lanceOfertado" className="rounded-xl mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NAO">Ainda não</SelectItem>
+                <SelectItem value="SIM">Sim, já ofertou</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {formData.lanceOfertado === "NAO"
+                ? "Sem problema — você pode registrar o lance depois na lista de contratos."
+                : "Informe a data da assembleia em que o lance foi dado."}
+            </p>
+          </div>
+          {formData.lanceOfertado === "SIM" && (
+            <div>
+              <Label htmlFor="dataAssembleia">Data da assembleia (lance) *</Label>
+              <Input
+                id="dataAssembleia"
+                type="date"
+                value={formData.dataAssembleia}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, dataAssembleia: e.target.value }))
+                }
+                className="rounded-xl mt-1"
+                required
+              />
+              <p className="text-xs text-muted-foreground mt-1.5">
+                Data em que o lance foi ofertado na assembleia.
+              </p>
+            </div>
+          )}
         </div>
       </Card>
 
@@ -542,7 +628,7 @@ export function NewSaleForm({ leadId, onSuccess, onCancel }: NewSaleFormProps) {
             Falta preencher: {missingRequiredFields.join(", ")}.
           </p>
         )}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div>
             <p className="text-sm text-muted-foreground">Cliente</p>
             <p className="font-semibold">{formData.clientName || "—"}</p>
@@ -575,6 +661,32 @@ export function NewSaleForm({ leadId, onSuccess, onCancel }: NewSaleFormProps) {
                 : "0,00"}
             </p>
           </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Dia da assembleia</p>
+            <p className="font-semibold">
+              {formData.diaAssembleia ? `Dia ${formData.diaAssembleia} de cada mês` : "—"}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Lance ofertado</p>
+            <p className="font-semibold">
+              {formData.lanceOfertado === "SIM"
+                ? "Sim, já ofertou"
+                : formData.lanceOfertado === "NAO"
+                  ? "Ainda não"
+                  : "—"}
+            </p>
+          </div>
+          {formData.lanceOfertado === "SIM" && (
+            <div>
+              <p className="text-sm text-muted-foreground">Data do lance</p>
+              <p className="font-semibold">
+                {formData.dataAssembleia
+                  ? new Date(formData.dataAssembleia + "T12:00:00").toLocaleDateString("pt-BR")
+                  : "—"}
+              </p>
+            </div>
+          )}
         </div>
       </Card>
 

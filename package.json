@@ -1,14 +1,15 @@
 {
   "name": "consorcio",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.6",
   "type": "module",
   "scripts": {
     "build": "vite build",
     "build:deploy": "vite build && node scripts/prepare-deploy.mjs",
     "dev": "vite",
-    "dev:api": "php -S localhost:8000",
-    "dev:full": "concurrently -k -n php,vite -c cyan,magenta \"npm run dev:api\" \"vite --mode php-api\""
+    "dev:api": "php -S localhost:8000 -t .",
+    "dev:full": "concurrently -k -n php,vite -c cyan,magenta \"npm run dev:api\" \"npm run dev\"",
+    "dev:wamp": "vite --mode wamp"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

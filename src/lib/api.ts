@@ -9,6 +9,25 @@ async function parseJson(res: Response): Promise<Record<string, unknown>> {
   }
 }
 
+export const ACCESS_BLOCK_KEY = "contempla_access_block";
+
+const ACCESS_BLOCK_CODES = new Set(["BILLING_BLOCKED", "EMPRESA_INATIVA", "USUARIO_INATIVO"]);
+
+function onAccessBlocked(data: Record<string, unknown>): never {
+  const msg =
+    (data.message as string) ||
+    "Acesso suspenso. Entre em contato com o suporte.";
+  sessionStorage.setItem(ACCESS_BLOCK_KEY, msg);
+  const p = window.location.pathname;
+  if (!p.endsWith("/login") && p !== "/login") {
+    window.location.assign("/login?blocked=1");
+  }
+  throw new Error(msg);
+}
+
+/** @deprecated use ACCESS_BLOCK_KEY */
+export const BILLING_BLOCK_KEY = ACCESS_BLOCK_KEY;
+
 function onUnauthorized(): void {
   const p = window.location.pathname;
   if (!p.endsWith("/login") && p !== "/login") {
@@ -19,6 +38,9 @@ function onUnauthorized(): void {
 export async function apiGet<T extends Record<string, unknown>>(path: string): Promise<T> {
   const res = await fetch(`/api${path}`, { credentials: "include" });
   const data = await parseJson(res);
+  if (ACCESS_BLOCK_CODES.has(String(data.code ?? ""))) {
+    onAccessBlocked(data);
+  }
   if (res.status === 401) {
     onUnauthorized();
     throw new Error("Não autenticado");
@@ -40,6 +62,9 @@ export async function apiPost<T extends Record<string, unknown>>(
     body: JSON.stringify(body),
   });
   const data = await parseJson(res);
+  if (ACCESS_BLOCK_CODES.has(String(data.code ?? ""))) {
+    onAccessBlocked(data);
+  }
   if (res.status === 401) {
     onUnauthorized();
     throw new Error("Não autenticado");
@@ -65,6 +90,9 @@ export async function apiLogin(body: { login: string; senha: string }): Promise<
     body: JSON.stringify(body),
   });
   const data = await parseJson(res);
+  if (ACCESS_BLOCK_CODES.has(String(data.code ?? ""))) {
+    onAccessBlocked(data);
+  }
   if (!res.ok) {
     throw new Error((data.message as string) || `Erro ${res.status}`);
   }
@@ -85,6 +113,9 @@ export async function apiPatch<T extends Record<string, unknown>>(
     body: JSON.stringify(body),
   });
   const data = await parseJson(res);
+  if (ACCESS_BLOCK_CODES.has(String(data.code ?? ""))) {
+    onAccessBlocked(data);
+  }
   if (res.status === 401) {
     onUnauthorized();
     throw new Error("Não autenticado");

@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { formatCompactCurrency, formatCurrency, formatDate } from "../lib/format";
 import { FeedbackState } from "../components/feedback-state";
 import { PageSkeleton } from "../components/page-skeleton";
+import { ContratoCardActions } from "../components/contrato-card-actions";
+import { RegistrarLanceDialog } from "../components/registrar-lance-dialog";
 import { Link, useNavigate } from "react-router";
 
 const clientStatusConfig = {
@@ -24,6 +26,8 @@ export function Sales() {
   const [sales, setSales] = useState<Sale[]>([]);
   const [summary, setSummary] = useState<{ totalEntrada: number; totalRecebido: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [lanceDialogOpen, setLanceDialogOpen] = useState(false);
+  const [lanceSale, setLanceSale] = useState<Sale | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,6 +51,11 @@ export function Sales() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  function abrirRegistrarLance(sale: Sale) {
+    setLanceSale(sale);
+    setLanceDialogOpen(true);
+  }
 
   const filteredSales =
     statusFilter === "all" ? sales : sales.filter((s) => s.clientStatus === statusFilter);
@@ -136,54 +145,76 @@ export function Sales() {
           const cfg = clientStatusConfig[sale.clientStatus];
           return (
             <Card key={sale.id} className="rounded-2xl p-6">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
                       <FileText className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">{sale.clientName}</h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-semibold">{sale.clientName}</h3>
+                        <Badge className={`rounded-full ${cfg.color}`}>{cfg.label}</Badge>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {sale.productType} · {formatDate(sale.date)}
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Valor Total</p>
-                      <p className="font-semibold tabular-nums">{formatCurrency(sale.cardValue)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Entrada à vista</p>
-                      <p className="font-semibold tabular-nums">{formatCurrency(sale.downPayment ?? 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Parcelas</p>
-                      <p className="font-semibold">
-                        {sale.installments ?? 80}x de{" "}
-                        {formatCurrency(sale.installmentValue ?? 0)}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Valor Total</p>
+                    <p className="font-semibold tabular-nums">{formatCurrency(sale.cardValue)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Entrada à vista</p>
+                    <p className="font-semibold tabular-nums">{formatCurrency(sale.downPayment ?? 0)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Parcelas</p>
+                    <p className="font-semibold">
+                      {sale.installments ?? 80}x de {formatCurrency(sale.installmentValue ?? 0)}
+                    </p>
+                    {(sale.paidInstallments ?? 0) > 0 && (
+                      <p className="mt-1 text-xs text-emerald-700">
+                        Recebido: {formatCurrency(sale.paidInstallments ?? 0)}
                       </p>
-                      {(sale.paidInstallments ?? 0) > 0 && (
-                        <p className="text-xs text-emerald-700 mt-1">
-                          Recebido: {formatCurrency(sale.paidInstallments ?? 0)}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">CPF</p>
-                      <p className="font-medium">{sale.cpf || "—"}</p>
-                    </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">CPF</p>
+                    <p className="font-medium">{sale.cpf || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Dia assembleia</p>
+                    <p className="font-medium">
+                      {sale.diaAssembleia ? `Dia ${sale.diaAssembleia}` : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Lance</p>
+                    {sale.lanceOfertado ? (
+                      <>
+                        <p className="font-medium text-emerald-800">Sim, ofertado</p>
+                        {sale.dataAssembleia && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {formatDate(sale.dataAssembleia)}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="font-medium text-muted-foreground">Ainda não</p>
+                    )}
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-2">
-                  <Badge className={`rounded-full ${cfg.color}`}>{cfg.label}</Badge>
-                  <Link to={`/parcelas?sale_id=${sale.id}`}>
-                    <Button size="sm" variant="outline" className="rounded-lg">
-                      Ver Parcelas
-                    </Button>
-                  </Link>
-                </div>
+
+                <ContratoCardActions
+                  saleId={sale.id}
+                  showRegistrarLance={!sale.lanceOfertado}
+                  onRegistrarLance={() => abrirRegistrarLance(sale)}
+                />
               </div>
             </Card>
           );
@@ -199,6 +230,16 @@ export function Sales() {
           onAction={() => navigate("/contratos/novo")}
         />
       )}
+
+      <RegistrarLanceDialog
+        open={lanceDialogOpen}
+        onOpenChange={(open) => {
+          setLanceDialogOpen(open);
+          if (!open) setLanceSale(null);
+        }}
+        sale={lanceSale}
+        onSuccess={load}
+      />
     </div>
   );
 }

@@ -193,3 +193,22 @@
     line-height: 1.5;
   }
 }
+
+@media print {
+  [data-app-chrome] {
+    display: none !important;
+  }
+
+  #main-content {
+    padding: 0 !important;
+  }
+
+  .dossie-print-hide {
+    display: none !important;
+  }
+
+  .dossie-document {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}

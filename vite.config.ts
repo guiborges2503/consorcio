@@ -37,12 +37,14 @@ function figmaAssetResolver() {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const isPhpApi = mode === 'php-api'
+  /** Dev local: PHP embutido em :8000. WAMP/Apache: defina VITE_WAMP_* no .env.local */
+  const useLocalPhpServer = mode === 'php-api' || mode === 'development'
   const wampPrefix =
-    (env.VITE_WAMP_API_PREFIX ?? '').trim() || (isPhpApi ? '/api' : '/consorcio/api')
+    (env.VITE_WAMP_API_PREFIX ?? '').trim() ||
+    (useLocalPhpServer ? '/api' : '/consorcio/api')
   const apiTarget =
     (env.VITE_WAMP_API_TARGET ?? '').trim() ||
-    (isPhpApi ? 'http://localhost:8000' : 'http://127.0.0.1')
+    (useLocalPhpServer ? 'http://localhost:8000' : 'http://127.0.0.1')
 
   return {
     plugins: [
@@ -54,13 +56,12 @@ export default defineConfig(({ mode }) => {
         name: 'consorcio-api-proxy-hint',
         configureServer(server) {
           server.httpServer?.once('listening', () => {
-            const builtin =
-              apiTarget.includes(':8000') || apiTarget.includes(':8090') || isPhpApi
+            const builtin = apiTarget.includes(':8000') || apiTarget.includes(':8090')
             // eslint-disable-next-line no-console
             console.log(
               builtin
-                ? `\n  [consorcio] Proxy /api → ${apiTarget}${wampPrefix}  (PHP embutido; rode npm run dev:full se a API não estiver no ar)\n`
-                : `\n  [consorcio] Proxy /api → ${apiTarget}${wampPrefix}/  (Apache/WAMP na porta do target; ECONNREFUSED = serviço parado — ou use npm run dev:full)\n`,
+                ? `\n  [consorcio] Proxy /api → ${apiTarget}${wampPrefix}  (inicie a API: npm run dev:api ou npm run dev:full)\n`
+                : `\n  [consorcio] Proxy /api → ${apiTarget}${wampPrefix}/  (Apache/WAMP; ECONNREFUSED = serviço parado)\n`,
             )
           })
         },

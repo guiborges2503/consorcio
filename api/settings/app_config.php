@@ -37,6 +37,7 @@ if ($consorcioEnv === 'development') {
 }
 
 define('APP_NAME', 'consorcio');
+define('APP_VERSION', '1.0.6');
 define('SESSION_KEY', 'consorcio_user');
 /** Path '/' para cookie funcionar com proxy do Vite (mesma origem lógica em dev). */
 define('SESSION_COOKIE_PATH', '/');

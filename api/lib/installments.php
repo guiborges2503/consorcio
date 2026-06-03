@@ -95,6 +95,54 @@ function consorcio_parcela_to_api(array $r): array
     ];
 }
 
+/** @return array{parcelas: array<int, array>, resumo: array<string, int|float>} */
+function consorcio_fetch_sale_parcelas(PDO $pdo, int $saleId): array
+{
+    $emptyResumo = [
+        'total' => 0,
+        'pagas' => 0,
+        'pendentes' => 0,
+        'atrasadas' => 0,
+        'valorPago' => 0.0,
+        'valorPendente' => 0.0,
+        'valorAtrasado' => 0.0,
+    ];
+    if ($saleId <= 0 || !consorcio_parcelas_table_exists($pdo)) {
+        return ['parcelas' => [], 'resumo' => $emptyResumo];
+    }
+
+    consorcio_refresh_sale_client_status($pdo, $saleId);
+
+    $st = $pdo->prepare('SELECT * FROM consorcio_parcelas WHERE sale_id = ? ORDER BY numero ASC');
+    $st->execute([$saleId]);
+
+    $parcelas = [];
+    $resumo = $emptyResumo;
+
+    while ($r = $st->fetch(PDO::FETCH_ASSOC)) {
+        $parcelas[] = consorcio_parcela_to_api($r);
+        $resumo['total']++;
+        $amount = (float) $r['amount'];
+        $status = (string) $r['status'];
+        if ($status === 'paga') {
+            $resumo['pagas']++;
+            $resumo['valorPago'] += $amount;
+        } elseif ($status === 'atrasada') {
+            $resumo['atrasadas']++;
+            $resumo['valorAtrasado'] += $amount;
+        } else {
+            $resumo['pendentes']++;
+            $resumo['valorPendente'] += $amount;
+        }
+    }
+
+    $resumo['valorPago'] = round((float) $resumo['valorPago'], 2);
+    $resumo['valorPendente'] = round((float) $resumo['valorPendente'], 2);
+    $resumo['valorAtrasado'] = round((float) $resumo['valorAtrasado'], 2);
+
+    return ['parcelas' => $parcelas, 'resumo' => $resumo];
+}
+
 function consorcio_parcelas_table_exists(PDO $pdo): bool
 {
     $st = $pdo->query("SHOW TABLES LIKE 'consorcio_parcelas'");

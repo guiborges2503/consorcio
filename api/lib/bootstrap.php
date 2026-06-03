@@ -49,6 +49,18 @@ function consorcio_require_login(): array
     if (!is_array($u) || empty($u['id'])) {
         consorcio_json_exit(['success' => false, 'message' => 'Não autenticado', 'code' => 'AUTH'], 401);
     }
+
+    if (!consorcio_is_master($u)) {
+        require_once __DIR__ . '/billing.php';
+        $pdo = consorcio_pdo();
+        if ($pdo) {
+            $block = consorcio_usuario_acesso_bloqueado($pdo, $u);
+            if ($block !== null) {
+                consorcio_json_bloqueio_fatura($block);
+            }
+        }
+    }
+
     return $u;
 }
 
@@ -57,6 +69,12 @@ function consorcio_user_role(array $user): string
     return strtoupper((string) ($user['role'] ?? 'VENDEDOR'));
 }
 
+function consorcio_is_master(array $user): bool
+{
+    return consorcio_user_role($user) === 'MASTER';
+}
+
+/** Admin da empresa (operacional consórcio) */
 function consorcio_is_admin(array $user): bool
 {
     return consorcio_user_role($user) === 'ADMIN';
@@ -66,7 +84,30 @@ function consorcio_require_admin(): array
 {
     $user = consorcio_require_login();
     if (!consorcio_is_admin($user)) {
-        consorcio_json_exit(['success' => false, 'message' => 'Acesso restrito ao administrador', 'code' => 'FORBIDDEN'], 403);
+        consorcio_json_exit(['success' => false, 'message' => 'Acesso restrito ao administrador da empresa', 'code' => 'FORBIDDEN'], 403);
+    }
+    return $user;
+}
+
+function consorcio_require_master(): array
+{
+    $user = consorcio_require_login();
+    if (!consorcio_is_master($user)) {
+        consorcio_json_exit(['success' => false, 'message' => 'Acesso restrito ao admin master', 'code' => 'FORBIDDEN'], 403);
+    }
+    return $user;
+}
+
+/** Bloqueia master de APIs operacionais (leads, contratos, parcelas…) */
+function consorcio_require_consorcio_access(): array
+{
+    $user = consorcio_require_login();
+    if (consorcio_is_master($user)) {
+        consorcio_json_exit([
+            'success' => false,
+            'message' => 'Admin master não acessa dados operacionais de consórcio',
+            'code' => 'FORBIDDEN',
+        ], 403);
     }
     return $user;
 }
@@ -78,6 +119,20 @@ function consorcio_scoped_user_id(array $user, ?int $requestedId = null): int
         return $requestedId;
     }
     return (int) $user['id'];
+}
+
+function consorcio_admin_empresa_id(PDO $pdo, array $admin): ?int
+{
+    if (!consorcio_is_admin($admin)) {
+        return null;
+    }
+    if (array_key_exists('empresa_id', $admin) && $admin['empresa_id'] !== null) {
+        return (int) $admin['empresa_id'];
+    }
+    $st = $pdo->prepare('SELECT empresa_id FROM consorcio_usuarios WHERE id = ? LIMIT 1');
+    $st->execute([(int) $admin['id']]);
+    $eid = $st->fetchColumn();
+    return $eid !== false && $eid !== null ? (int) $eid : null;
 }
 
 function consorcio_iniciais(string $nome): string

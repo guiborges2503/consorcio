@@ -4,6 +4,7 @@ import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import { roleLabel } from "../lib/auth-roles";
 import { apiGet, apiPatch } from "../lib/api";
 import { useAuth } from "../contexts/auth-context";
 import { toast } from "sonner";
@@ -120,7 +121,7 @@ export function Profile() {
           <div>
             <Label>Perfil</Label>
             <Input
-              value={profile.role === "ADMIN" ? "Administrador" : "Vendedor"}
+              value={roleLabel(profile.role)}
               disabled
               className="rounded-xl mt-1 bg-muted"
             />

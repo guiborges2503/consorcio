@@ -10,6 +10,11 @@ if (!$pdo) {
     consorcio_json_exit(['success' => false, 'message' => 'Banco indisponível'], 503);
 }
 
+$empresaId = consorcio_admin_empresa_id($pdo, $admin);
+if ($empresaId === null || $empresaId <= 0) {
+    consorcio_json_exit(['success' => false, 'message' => 'Admin sem empresa vinculada'], 403);
+}
+
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $adminId = (int) $admin['id'];
 
@@ -37,9 +42,10 @@ if ($method === 'GET') {
     $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
     if ($id > 0) {
         $st = $pdo->prepare(
-            'SELECT id, login, nome, email, role, status, month_goal FROM consorcio_usuarios WHERE id = ? LIMIT 1'
+            'SELECT id, login, nome, email, role, status, month_goal FROM consorcio_usuarios
+             WHERE id = ? AND empresa_id = ? LIMIT 1'
         );
-        $st->execute([$id]);
+        $st->execute([$id, $empresaId]);
         $row = $st->fetch(PDO::FETCH_ASSOC);
         if (!$row) {
             consorcio_json_exit(['success' => false, 'message' => 'Usuário não encontrado'], 404);
@@ -47,9 +53,12 @@ if ($method === 'GET') {
         consorcio_json_exit(['success' => true, 'user' => consorcio_user_to_api($row)]);
     }
 
-    $st = $pdo->query(
-        'SELECT id, login, nome, email, role, status, month_goal FROM consorcio_usuarios ORDER BY nome ASC'
+    $st = $pdo->prepare(
+        'SELECT id, login, nome, email, role, status, month_goal FROM consorcio_usuarios
+         WHERE empresa_id = ? AND role IN (\'ADMIN\', \'VENDEDOR\')
+         ORDER BY nome ASC'
     );
+    $st->execute([$empresaId]);
     $list = [];
     while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
         $list[] = consorcio_user_to_api($row);
@@ -64,7 +73,7 @@ if ($method === 'POST') {
     $email = trim((string) ($in['email'] ?? ''));
     $senha = (string) ($in['senha'] ?? '');
     $role = strtoupper(trim((string) ($in['role'] ?? 'VENDEDOR')));
-    $status = strtoupper(trim((string) ($in['status'] ?? 'ATIVO')));
+    $status = 'ATIVO';
     $monthGoal = (float) ($in['monthGoal'] ?? 500000);
 
     if ($login === '' || $nome === '' || $email === '' || $senha === '') {
@@ -75,6 +84,15 @@ if ($method === 'POST') {
     }
     if (!in_array($role, ['ADMIN', 'VENDEDOR'], true)) {
         $role = 'VENDEDOR';
+    }
+    if ($role === 'ADMIN') {
+        $st = $pdo->prepare(
+            "SELECT id FROM consorcio_usuarios WHERE empresa_id = ? AND role = 'ADMIN' AND status = 'ATIVO' LIMIT 1"
+        );
+        $st->execute([$empresaId]);
+        if ($st->fetchColumn()) {
+            consorcio_json_exit(['success' => false, 'message' => 'Empresa já possui um administrador ativo'], 400);
+        }
     }
     if (!in_array($status, ['ATIVO', 'INATIVO'], true)) {
         $status = 'ATIVO';
@@ -87,10 +105,10 @@ if ($method === 'POST') {
     }
 
     $st = $pdo->prepare(
-        'INSERT INTO consorcio_usuarios (login, senha, nome, email, status, role, month_goal)
-         VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO consorcio_usuarios (login, senha, nome, email, status, role, empresa_id, month_goal)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     );
-    $st->execute([$login, consorcio_hash_senha_user($senha), $nome, $email, $status, $role, $monthGoal]);
+    $st->execute([$login, consorcio_hash_senha_user($senha), $nome, $email, $status, $role, $empresaId, $monthGoal]);
     $newId = (int) $pdo->lastInsertId();
 
     $st = $pdo->prepare(
@@ -107,8 +125,8 @@ if ($method === 'PATCH' || $method === 'PUT') {
         consorcio_json_exit(['success' => false, 'message' => 'ID inválido'], 400);
     }
 
-    $st = $pdo->prepare('SELECT * FROM consorcio_usuarios WHERE id = ? LIMIT 1');
-    $st->execute([$id]);
+    $st = $pdo->prepare('SELECT * FROM consorcio_usuarios WHERE id = ? AND empresa_id = ? LIMIT 1');
+    $st->execute([$id, $empresaId]);
     $current = $st->fetch(PDO::FETCH_ASSOC);
     if (!$current) {
         consorcio_json_exit(['success' => false, 'message' => 'Usuário não encontrado'], 404);
@@ -117,9 +135,19 @@ if ($method === 'PATCH' || $method === 'PUT') {
     $nome = array_key_exists('nome', $in) ? trim((string) $in['nome']) : $current['nome'];
     $email = array_key_exists('email', $in) ? trim((string) $in['email']) : $current['email'];
     $role = array_key_exists('role', $in) ? strtoupper(trim((string) $in['role'])) : $current['role'];
-    $status = array_key_exists('status', $in) ? strtoupper(trim((string) $in['status'])) : $current['status'];
     $monthGoal = array_key_exists('monthGoal', $in) ? (float) $in['monthGoal'] : (float) $current['month_goal'];
     $senha = (string) ($in['senha'] ?? '');
+
+    if (array_key_exists('status', $in)) {
+        $requestedStatus = strtoupper(trim((string) $in['status']));
+        if ($requestedStatus !== strtoupper((string) $current['status'])) {
+            consorcio_json_exit([
+                'success' => false,
+                'message' => 'Ativar ou desativar usuários é feito pelo suporte da plataforma',
+            ], 403);
+        }
+    }
+    $status = $current['status'];
 
     if ($nome === '' || $email === '') {
         consorcio_json_exit(['success' => false, 'message' => 'Nome e e-mail são obrigatórios'], 400);
@@ -131,11 +159,18 @@ if ($method === 'PATCH' || $method === 'PUT') {
         $status = $current['status'];
     }
 
-    if ($id === $adminId && $status === 'INATIVO') {
-        consorcio_json_exit(['success' => false, 'message' => 'Você não pode desativar sua própria conta'], 400);
-    }
     if ($id === $adminId && $role !== 'ADMIN') {
         consorcio_json_exit(['success' => false, 'message' => 'Você não pode remover seu próprio acesso de admin'], 400);
+    }
+    if ($status === 'ATIVO' && $role === 'ADMIN') {
+        $st = $pdo->prepare(
+            "SELECT id FROM consorcio_usuarios
+             WHERE empresa_id = ? AND role = 'ADMIN' AND status = 'ATIVO' AND id != ? LIMIT 1"
+        );
+        $st->execute([$empresaId, $id]);
+        if ($st->fetchColumn()) {
+            consorcio_json_exit(['success' => false, 'message' => 'Empresa já possui um administrador ativo'], 400);
+        }
     }
 
     $st = $pdo->prepare('SELECT id FROM consorcio_usuarios WHERE email = ? AND id != ? LIMIT 1');

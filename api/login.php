@@ -43,7 +43,17 @@ if (!$pdo) {
 }
 
 try {
-    $sql = 'SELECT id, login, senha, nome, email, status, role FROM consorcio_usuarios WHERE login = :l OR email = :e LIMIT 1';
+    $userColumns = 'id, login, senha, nome, email, status, role';
+    try {
+        $probe = $pdo->query('SELECT empresa_id FROM consorcio_usuarios LIMIT 0');
+        if ($probe) {
+            $userColumns .= ', empresa_id';
+        }
+    } catch (Throwable $ignored) {
+        // coluna empresa_id ainda não migrada
+    }
+
+    $sql = "SELECT {$userColumns} FROM consorcio_usuarios WHERE login = :l OR email = :e LIMIT 1";
     $st = $pdo->prepare($sql);
     $st->execute([':l' => $login, ':e' => $login]);
     $usuario = $st->fetch();
@@ -53,13 +63,60 @@ try {
         : md5($senha);
 
     if (!$usuario || strtolower((string) $usuario['senha']) !== $senha_md5) {
+        require_once __DIR__ . '/lib/audit.php';
+        $auditUser = $usuario ? [
+            'id' => (int) $usuario['id'],
+            'login' => $usuario['login'],
+            'role' => strtoupper((string) ($usuario['role'] ?? 'VENDEDOR')),
+        ] : null;
+        consorcio_audit_log(
+            $pdo,
+            'LOGIN_FAIL',
+            'Falha de autenticação',
+            $auditUser,
+            $auditUser && array_key_exists('empresa_id', $usuario) && $usuario['empresa_id'] !== null
+                ? (int) $usuario['empresa_id']
+                : null,
+            'auth',
+            '',
+            'SECURITY',
+            ['loginAttempt' => $login]
+        );
         echo json_encode(['success' => false, 'message' => 'Usuário ou senha incorretos']);
         exit;
     }
 
     if (strtoupper((string) $usuario['status']) !== 'ATIVO') {
+        require_once __DIR__ . '/lib/audit.php';
+        consorcio_audit_log(
+            $pdo,
+            'LOGIN_FAIL',
+            'Tentativa de login com usuário inativo',
+            ['id' => (int) $usuario['id'], 'login' => $usuario['login']],
+            array_key_exists('empresa_id', $usuario) && $usuario['empresa_id'] !== null
+                ? (int) $usuario['empresa_id']
+                : null,
+            'auth',
+            (string) $usuario['id'],
+            'SECURITY',
+            ['loginAttempt' => $login, 'motivo' => 'INATIVO']
+        );
         echo json_encode(['success' => false, 'message' => 'Usuário inativo']);
         exit;
+    }
+
+    require_once __DIR__ . '/lib/billing.php';
+    $role = strtoupper((string) ($usuario['role'] ?? 'VENDEDOR'));
+    $empresaId = array_key_exists('empresa_id', $usuario) && $usuario['empresa_id'] !== null
+        ? (int) $usuario['empresa_id']
+        : null;
+    $block = consorcio_usuario_acesso_bloqueado($pdo, [
+        'id' => (int) $usuario['id'],
+        'role' => $role,
+        'empresa_id' => $empresaId,
+    ]);
+    if ($block !== null) {
+        consorcio_json_bloqueio_fatura($block);
     }
 
     $_SESSION[SESSION_KEY] = [
@@ -68,17 +125,37 @@ try {
         'nome' => $usuario['nome'],
         'email' => $usuario['email'],
         'role' => strtoupper((string) ($usuario['role'] ?? 'VENDEDOR')),
+        'empresa_id' => array_key_exists('empresa_id', $usuario) && $usuario['empresa_id'] !== null
+            ? (int) $usuario['empresa_id']
+            : null,
     ];
+
+    require_once __DIR__ . '/lib/audit.php';
+    consorcio_audit_log(
+        $pdo,
+        'LOGIN_OK',
+        'Login realizado',
+        $_SESSION[SESSION_KEY],
+        $_SESSION[SESSION_KEY]['empresa_id'],
+        'auth',
+        (string) $usuario['id'],
+        'SECURITY',
+        ['role' => $role]
+    );
 
     echo json_encode([
         'success' => true,
         'message' => 'Login realizado com sucesso',
+        'appVersion' => APP_VERSION,
         'user' => [
             'id' => (int) $usuario['id'],
             'login' => $usuario['login'],
             'nome' => $usuario['nome'],
             'email' => $usuario['email'],
             'role' => strtoupper((string) ($usuario['role'] ?? 'VENDEDOR')),
+            'empresa_id' => array_key_exists('empresa_id', $usuario) && $usuario['empresa_id'] !== null
+                ? (int) $usuario['empresa_id']
+                : null,
         ],
     ]);
 } catch (Throwable $e) {
