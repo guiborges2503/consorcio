@@ -198,6 +198,30 @@ export interface Fatura {
   itensTotal?: number;
 }
 
+export interface FaturasResumo {
+  empresa: {
+    nome: string;
+    status: EmpresaStatus;
+    planoCodigo: string;
+    planoNome?: string;
+    planoPremium: boolean;
+    formaCobranca: FormaCobranca;
+    valorMensalUsuario: number;
+    valorAnualUsuario: number;
+    diaVencimento: number;
+    qtdUsuarios: number;
+    qtdUsuariosCobraveis?: number;
+    valorEstimadoFatura: number;
+  };
+  cobrarFatura: boolean;
+  faturaAberta: Fatura | null;
+  proximoVencimento: string | null;
+  totalEmAberto: number;
+  faturasEmAberto: Fatura[];
+  faturasPagas: Fatura[];
+  meuItem: FaturaItem | null;
+}
+
 export interface FinanceiroGeral {
   aReceber: number;
   aPagar: number;

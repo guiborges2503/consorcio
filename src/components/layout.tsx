@@ -18,6 +18,7 @@ import {
   ScrollText,
   Crown,
   Tags,
+  CreditCard,
 } from "lucide-react";
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -39,12 +40,14 @@ const userNav = [
   { icon: Users, label: "Leads", path: "/leads" },
   { icon: FileText, label: "Contratos", path: "/contratos" },
   { icon: CalendarCheck, label: "Parcelas", path: "/parcelas" },
+  { icon: CreditCard, label: "Faturas", path: "/assinatura" },
 ];
 
 const adminNav = [
   { icon: Shield, label: "Painel Admin", path: "/admin" },
   { icon: Trophy, label: "Ranking", path: "/ranking" },
   { icon: UserCog, label: "Usuários", path: "/admin/usuarios" },
+  { icon: CreditCard, label: "Faturas", path: "/assinatura" },
   { icon: Users, label: "Leads (todos)", path: "/leads" },
   { icon: FileText, label: "Contratos", path: "/contratos" },
 ];
@@ -102,7 +105,9 @@ export function Layout() {
         ? "Dossiê do consórcio"
         : location.pathname === "/perfil"
         ? "Perfil"
-        : navItems.find((item) => navActive(item.path, location.pathname))?.label || "Dashboard";
+        : location.pathname === "/assinatura"
+          ? "Faturas"
+          : navItems.find((item) => navActive(item.path, location.pathname))?.label || "Dashboard";
 
   return (
     <div className="min-h-[100dvh] overflow-x-hidden bg-background">
@@ -219,6 +224,15 @@ export function Layout() {
                   <User className="w-4 h-4 mr-2" />
                   Editar perfil
                 </DropdownMenuItem>
+                {!masterUser && (
+                  <DropdownMenuItem
+                    className="rounded-lg cursor-pointer"
+                    onClick={() => navigate("/assinatura")}
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Faturas
+                  </DropdownMenuItem>
+                )}
                 {isCompanyAdmin(user?.role) && (
                   <DropdownMenuItem
                     className="rounded-lg cursor-pointer"

@@ -24,6 +24,7 @@ import { Sales } from "./pages/sales";
 import { Parcelas } from "./pages/parcelas";
 import { Ranking } from "./pages/ranking";
 import { Profile } from "./pages/profile";
+import { Assinatura } from "./pages/assinatura";
 import { UsersAdmin } from "./pages/users-admin";
 import { NewContract } from "./pages/new-contract";
 import { ContratoDossie } from "./pages/contrato-dossie";
@@ -71,6 +72,7 @@ export const router = createBrowserRouter([
             children: [{ index: true, Component: UsersAdmin }],
           },
           { path: "perfil", Component: Profile },
+          { path: "assinatura", Component: Assinatura },
           {
             Component: RequireConsorcio,
             children: [

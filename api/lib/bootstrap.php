@@ -98,6 +98,29 @@ function consorcio_require_master(): array
     return $user;
 }
 
+/** Login tenant — permite consultar faturas mesmo com inadimplência SaaS. */
+function consorcio_require_login_faturas(): array
+{
+    consorcio_sessao_iniciar();
+    $u = $_SESSION[SESSION_KEY] ?? null;
+    if (!is_array($u) || empty($u['id'])) {
+        consorcio_json_exit(['success' => false, 'message' => 'Não autenticado', 'code' => 'AUTH'], 401);
+    }
+
+    if (!consorcio_is_master($u)) {
+        require_once __DIR__ . '/billing.php';
+        $pdo = consorcio_pdo();
+        if ($pdo) {
+            $block = consorcio_usuario_acesso_bloqueado($pdo, $u, true);
+            if ($block !== null) {
+                consorcio_json_bloqueio_fatura($block);
+            }
+        }
+    }
+
+    return $u;
+}
+
 /** Bloqueia master de APIs operacionais (leads, contratos, parcelas…) */
 function consorcio_require_consorcio_access(): array
 {
@@ -131,6 +154,21 @@ function consorcio_admin_empresa_id(PDO $pdo, array $admin): ?int
     }
     $st = $pdo->prepare('SELECT empresa_id FROM consorcio_usuarios WHERE id = ? LIMIT 1');
     $st->execute([(int) $admin['id']]);
+    $eid = $st->fetchColumn();
+    return $eid !== false && $eid !== null ? (int) $eid : null;
+}
+
+/** empresa_id do usuário tenant (admin ou vendedor). */
+function consorcio_user_empresa_id(PDO $pdo, array $user): ?int
+{
+    if (consorcio_is_master($user)) {
+        return null;
+    }
+    if (array_key_exists('empresa_id', $user) && $user['empresa_id'] !== null) {
+        return (int) $user['empresa_id'];
+    }
+    $st = $pdo->prepare('SELECT empresa_id FROM consorcio_usuarios WHERE id = ? LIMIT 1');
+    $st->execute([(int) $user['id']]);
     $eid = $st->fetchColumn();
     return $eid !== false && $eid !== null ? (int) $eid : null;
 }
