@@ -27,11 +27,12 @@ import type { Fatura, FaturaItem } from "../types/domain";
 
 type Props = {
   fatura: Fatura;
-  onUpdated: () => void;
+  onUpdated?: () => void;
   compact?: boolean;
+  readOnly?: boolean;
 };
 
-export function FaturaItensPagamento({ fatura, onUpdated, compact }: Props) {
+export function FaturaItensPagamento({ fatura, onUpdated, compact, readOnly }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [item, setItem] = useState<FaturaItem | null>(null);
   const [forma, setForma] = useState("PIX");
@@ -58,7 +59,7 @@ export function FaturaItensPagamento({ fatura, onUpdated, compact }: Props) {
       });
       toast.success(`Pagamento de ${item.usuarioNome} registrado`);
       setDialogOpen(false);
-      onUpdated();
+      onUpdated?.();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao registrar");
     } finally {
@@ -107,7 +108,11 @@ export function FaturaItensPagamento({ fatura, onUpdated, compact }: Props) {
               </div>
               {i.status === "PAGA" ? (
                 <Badge className="bg-emerald-50 text-emerald-800 border-emerald-200 shrink-0 w-fit">
-                  Pago
+                  Pago{i.pagoEm ? ` · ${i.pagoEm}` : ""}
+                </Badge>
+              ) : readOnly ? (
+                <Badge variant="outline" className="shrink-0 w-fit">
+                  Em aberto · {formatCurrency(i.saldo)}
                 </Badge>
               ) : (
                 <Button

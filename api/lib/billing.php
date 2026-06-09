@@ -881,7 +881,7 @@ function consorcio_usuario_bloqueado_fatura(PDO $pdo, array $user): ?array
     return null;
 }
 
-function consorcio_usuario_acesso_bloqueado(PDO $pdo, array $user): ?array
+function consorcio_usuario_acesso_bloqueado(PDO $pdo, array $user, bool $ignorarBloqueioFatura = false): ?array
 {
     $role = strtoupper((string) ($user['role'] ?? 'VENDEDOR'));
     if ($role === 'MASTER') {
@@ -907,6 +907,19 @@ function consorcio_usuario_acesso_bloqueado(PDO $pdo, array $user): ?array
 
     $empresaId = $user['empresa_id'] ?? null;
     if ($empresaId === null || (int) $empresaId <= 0) {
+        if ($userId > 0) {
+            try {
+                $st = $pdo->prepare('SELECT empresa_id FROM consorcio_usuarios WHERE id = ? LIMIT 1');
+                $st->execute([$userId]);
+                $eid = $st->fetchColumn();
+                if ($eid !== false && $eid !== null) {
+                    $empresaId = (int) $eid;
+                }
+            } catch (Throwable $e) {
+            }
+        }
+    }
+    if ($empresaId === null || (int) $empresaId <= 0) {
         return null;
     }
 
@@ -915,6 +928,11 @@ function consorcio_usuario_acesso_bloqueado(PDO $pdo, array $user): ?array
         return $empresaBlock;
     }
 
+    if ($ignorarBloqueioFatura) {
+        return null;
+    }
+
+    $user['empresa_id'] = (int) $empresaId;
     return consorcio_usuario_bloqueado_fatura($pdo, $user);
 }
 
